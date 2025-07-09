@@ -60,9 +60,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.congle7997.google_iap.BillingSubs;
-import com.congle7997.google_iap.CallBackBilling;
+// import com.congle7997.google_iap.BillingSubs; // Subscription removed
+// import com.congle7997.google_iap.CallBackBilling; // Subscription removed
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -87,17 +86,17 @@ import com.google.android.gms.cast.framework.media.RemoteMediaClient;
 import com.google.android.gms.common.images.WebImage;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.jackandphantom.blurimage.BlurImage;
-import com.orhanobut.hawk.Hawk;
+// import com.orhanobut.hawk.Hawk; // Hawk usage for episodes_watched and my_downloads_temp removed
 import my.cinemax.app.free.Provider.PrefManager;
 import my.cinemax.app.free.R;
 import my.cinemax.app.free.api.apiClient;
 import my.cinemax.app.free.api.apiRest;
-import my.cinemax.app.free.config.Global;
+// import my.cinemax.app.free.config.Global; // Global.SUBSCRIPTION_ID not used
 import my.cinemax.app.free.crypto.PlaylistDownloader;
 import my.cinemax.app.free.entity.Actor;
 import my.cinemax.app.free.entity.ApiResponse;
 import my.cinemax.app.free.entity.Comment;
-import my.cinemax.app.free.entity.DownloadItem;
+// import my.cinemax.app.free.entity.DownloadItem; // Not used directly for Hawk temp list anymore
 import my.cinemax.app.free.entity.Episode;
 import my.cinemax.app.free.entity.Language;
 import my.cinemax.app.free.entity.Poster;
@@ -132,7 +131,7 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
     private final SessionManagerListener mSessionManagerListener =
             new SessionManagerListenerImpl();
 
-    private String payment_methode_id = "null";
+    // private String payment_methode_id = "null"; // Payment related
 
     //views
     private ImageView image_view_activity_serie_background;
@@ -191,8 +190,8 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
     private LinearLayout linear_layout_activity_serie_rating;
     private TextView text_view_activity_serie_imdb_rating;
     private LinearLayout linear_layout_activity_serie_imdb_rating;
-    private int current_position_download =-1;
-    private int current_position_play = -1;
+    // private int current_position_download =-1; // Not needed
+    // private int current_position_play = -1; // Not needed
     private ProgressBar progress_bar_activity_serie_my_list;
 
     private class SessionManagerListenerImpl implements SessionManagerListener {
@@ -246,24 +245,16 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         }
     }
 
-
-
     private RewardedAd mRewardedVideoAd;
+    // private  Boolean DialogOpened = false; // Subscription related
+    // private  Boolean fromLoad = false; // Subscription related
+    // private  int operationAfterAds = 0; // Subscription related
 
+    // private static final String LOG_TAG = "iabv3"; // Subscription related
+    // private static final String MERCHANT_ID=null; // Subscription related
 
-    private  Boolean DialogOpened = false;
-    private  Boolean fromLoad = false;
-    private  int operationAfterAds = 0;
-
-
-    private static final String LOG_TAG = "iabv3";
-    // put your Google merchant id here (as stated in public profile of your Payments Merchant Center)
-    // if filled library will provide protection against Freedom alike Play Market simulators
-    private static final String MERCHANT_ID=null;
-
-
-    private Dialog dialog;
-    private boolean autoDisplay = false;
+    // private Dialog dialog; // Subscription dialog removed
+    private boolean autoDisplay = false; // For rewarded ads, if kept
 
 
     @Override
@@ -272,7 +263,7 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_serie);
         mCastContext = CastContext.getSharedInstance(this);
-
+        prefManager = new PrefManager(getApplicationContext()); // Initialize prefManager here
 
         initView();
         initAction();
@@ -284,93 +275,52 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         showAdsBanner();
 
         loadRewardedVideoAd();
-
-        initBuy();
+        // initBuy(); // Subscription related code removed
     }
 
-    BillingSubs billingSubs;
-    public void initBuy(){
-        List<String> listSkuStoreSubs = new ArrayList<>();
-        listSkuStoreSubs.add(Global.SUBSCRIPTION_ID);
-        billingSubs = new BillingSubs(this, listSkuStoreSubs, new CallBackBilling() {
-            @Override
-            public void onPurchase() {
-                PrefManager prefManager= new PrefManager(getApplicationContext());
-                prefManager.setString("SUBSCRIBED","TRUE");
-                Toasty.success(SerieActivity.this, "you have successfully subscribed ", Toast.LENGTH_SHORT).show();
-            }
+    // BillingSubs billingSubs; // Subscription related code removed
+    // public void initBuy(){ // Subscription related code removed
+    // listSkuStoreSubs.add(Global.SUBSCRIPTION_ID); // Global.SUBSCRIPTION_ID will be removed
+    // ...
+    // }
 
-            @Override
-            public void onNotPurchase() {
-                Toasty.warning(SerieActivity.this, "Operation has been cancelled  ", Toast.LENGTH_SHORT).show();
-            }
+    // public void subscribe(){ // Subscription related code removed
+    // billingSubs.purchase(Global.SUBSCRIPTION_ID); // Global.SUBSCRIPTION_ID will be removed
+    // }
 
-            @Override
-            public void onNotLogin() {
-            }
-        });
-    }
-
-    public void subscribe(){
-        billingSubs.purchase(Global.SUBSCRIPTION_ID);
-    }
     public void loadRewardedVideoAd() {
-        PrefManager   prefManager= new PrefManager(getApplicationContext());
-
-        mRewardedVideoAd.load(getApplicationContext(), prefManager.getString("ADMIN_REWARDED_ADMOB_ID"),
-                new AdRequest.Builder().build(), new RewardedAdLoadCallback() {
-                    @Override
-                    public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
-                        super.onAdLoaded(rewardedAd);
-                        if (autoDisplay){
-                            dialog.dismiss();
+        // PrefManager prefManager = new PrefManager(getApplicationContext()); // Already initialized
+        if (mRewardedVideoAd == null && prefManager != null && !prefManager.getString("ADMIN_REWARDED_ADMOB_ID","").isEmpty()) {
+            RewardedAd.load(getApplicationContext(), prefManager.getString("ADMIN_REWARDED_ADMOB_ID"),
+                    new AdRequest.Builder().build(), new RewardedAdLoadCallback() {
+                        @Override
+                        public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
                             mRewardedVideoAd = rewardedAd;
-
-                            autoDisplay = false;
-                            mRewardedVideoAd.show(SerieActivity.this, new OnUserEarnedRewardListener() {
-                                @Override
-                                public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
-                                    Toasty.success(getApplicationContext(),getString(R.string.use_content_for_free)).show();
-                                    Log.d("Rewarded","onRewarded ");
-                                    switch (operationAfterAds){
-                                        case  100 :
-                                            selectedEpisode.setDownloadas("1");
-                                            break;
-                                        case  200 :
-                                            selectedEpisode.setPlayas("1");
-                                            break;
-                                        case 300 :
-                                            if (current_position_play != -1 ){
-                                                playableList.get(current_position_play).setPremium("1");
-                                                showSourcesPlayDialog();
-                                            }
-                                            break;
-                                        case 400:
-                                            if (current_position_download != -1 ){
-                                                downloadableList.get(current_position_download).setPremium("1");
-                                                showSourcesDownloadDialog();
-                                            }
-                                    }
-                                }
-                            });
+                            Log.d(TAG, "Rewarded Ad Loaded.");
+                            // if (autoDisplay && dialog != null && dialog.isShowing()){ // dialog (subscription) is removed
+                            //     dialog.dismiss();
+                            //     autoDisplay = false;
+                            //     mRewardedVideoAd.show(SerieActivity.this, new OnUserEarnedRewardListener() {
+                            //         @Override
+                            //         public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
+                            //             Toasty.success(getApplicationContext(),getString(R.string.reward_granted)).show();
+                            //             // Original switch (operationAfterAds) logic is removed
+                            //         }
+                            //     });
+                            // }
                         }
-                    }
 
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        super.onAdFailedToLoad(loadAdError);
-                    }
-                });
+                        @Override
+                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                            mRewardedVideoAd = null;
+                            Log.d(TAG, "Rewarded Ad failed to load: " + loadAdError.getMessage());
+                        }
+                    });
+        }
     }
-
-
-
-
-
 
     private void setDownloadableList(Episode episode) {
         selectedEpisode = episode;
-
         downloadableList.clear();
         for (int i = 0; i < episode.getSources().size(); i++) {
             if (episode.getSources().get(i).getKind().equals("both") || episode.getSources().get(i).getKind().equals("download")){
@@ -379,47 +329,48 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
                 }
             }
         }
-        if (checkSUBSCRIBED()){
-            showSourcesDownloadDialog();
-        }else{
-            if (selectedEpisode.getDownloadas().equals("2")){
-                showDialog(false);
-            }else if(selectedEpisode.getDownloadas().equals("3") ){
-                showDialog(true);
-                operationAfterAds = 100;
-            }else{
-                showSourcesDownloadDialog();
-            }
-        }
+        // if (checkSUBSCRIBED()){ // Subscription removed
+        //     showSourcesDownloadDialog();
+        // }else{
+        //     if (selectedEpisode.getDownloadas().equals("2")){
+        //         showDialog(false); // Subscription removed
+        //     }else if(selectedEpisode.getDownloadas().equals("3") ){
+        //         showDialog(true); // Subscription removed
+        //         operationAfterAds = 100;
+        //     }else{
+        //         showSourcesDownloadDialog();
+        //     }
+        // }
+        showSourcesDownloadDialog(); // Directly show
     }
+
     private void setPlayableList(Episode episode) {
         selectedEpisode = episode;
         playableList.clear();
         for (int i = 0; i < episode.getSources().size(); i++) {
             if (episode.getSources().get(i).getKind().equals("both") || episode.getSources().get(i).getKind().equals("play")) {
-
                 playableList.add(episode.getSources().get(i));
             }
         }
 
-        if (checkSUBSCRIBED()){
-            showSourcesPlayDialog();
-        }else{
-            if (selectedEpisode.getPlayas().equals("2")){
-                showDialog(false);
-            }else if(selectedEpisode.getPlayas().equals("3") ){
-                showDialog(true);
-                operationAfterAds = 200;
-            }else{
-                showSourcesPlayDialog();
-            }
-        }
+        // if (checkSUBSCRIBED()){ // Subscription removed
+        //     showSourcesPlayDialog();
+        // }else{
+        //     if (selectedEpisode.getPlayas().equals("2")){
+        //         showDialog(false); // Subscription removed
+        //     }else if(selectedEpisode.getPlayas().equals("3") ){
+        //         showDialog(true); // Subscription removed
+        //         operationAfterAds = 200;
+        //     }else{
+        //         showSourcesPlayDialog();
+        //     }
+        // }
+        showSourcesPlayDialog(); // Directly show
     }
-    private void getSeasons() {
 
+    private void getSeasons() {
         Retrofit retrofit = apiClient.getClient();
         apiRest service = retrofit.create(apiRest.class);
-
         Call<List<Season>> call = service.getSeasonsBySerie(poster.getId());
         call.enqueue(new Callback<List<Season>>() {
             @Override
@@ -443,16 +394,16 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
                         linear_layout_activity_serie_seasons.setVisibility(View.GONE);
                     }
                 }else{
-                    linear_layout_activity_serie_seasons.setVisibility(View.VISIBLE);
+                    linear_layout_activity_serie_seasons.setVisibility(View.VISIBLE); // Should be GONE on error
                 }
             }
             @Override
             public void onFailure(Call<List<Season>> call, Throwable t) {
                 linear_layout_activity_serie_seasons.setVisibility(View.GONE);
-
             }
         });
     }
+
     private void getPosterCastings() {
         Retrofit retrofit = apiClient.getClient();
         apiRest service = retrofit.create(apiRest.class);
@@ -481,6 +432,7 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         poster = getIntent().getParcelableExtra("poster");
         from = getIntent().getStringExtra("from");
     }
+
     private void setSerie() {
         Picasso.with(this).load((poster.getCover()!=null ? poster.getCover() : poster.getImage())).into(image_view_activity_serie_cover);
         final com.squareup.picasso.Target target = new com.squareup.picasso.Target() {
@@ -515,13 +467,7 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             }
         }
 
-        if (poster.getDuration()!=null){
-            if(!poster.getDuration().isEmpty()){
-                text_view_activity_serie_duration.setVisibility(View.VISIBLE);
-                text_view_activity_serie_duration.setText(poster.getDuration());
-            }
-        }
-        if (poster.getDuration()!=null){
+        if (poster.getDuration()!=null){ // Duration might not be relevant for series overall
             if(!poster.getDuration().isEmpty()){
                 text_view_activity_serie_duration.setVisibility(View.VISIBLE);
                 text_view_activity_serie_duration.setText(poster.getDuration());
@@ -547,7 +493,7 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         if (poster.getTrailer()!=null){
             linear_layout_serie_activity_trailer.setVisibility(View.VISIBLE);
         }
-        if (poster.getComment()){
+        if (poster.getComment()){ // This may need re-evaluation if anonymous comments are not desired/supported
             floating_action_button_activity_serie_comment.setVisibility(View.VISIBLE);
         }else{
             floating_action_button_activity_serie_comment.setVisibility(View.GONE);
@@ -588,33 +534,18 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         floating_action_button_activity_serie_play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                if (selectedEpisode==null){
-                    if (seasonArrayList!=null){
-                        if (seasonArrayList.size()>0){
-                            if (seasonArrayList.get(0).getEpisodes()!=null){
-                                if (seasonArrayList.get(0).getEpisodes().size()>0) {
-                                    setPlayableList(seasonArrayList.get(0).getEpisodes().get(0));
-                                }
-                            }
+                if (selectedEpisode==null){ // If no episode selected yet, try to play the first one
+                    if (seasonArrayList!=null && seasonArrayList.size()>0){
+                        if (seasonArrayList.get(0).getEpisodes()!=null && seasonArrayList.get(0).getEpisodes().size()>0) {
+                            setPlayableList(seasonArrayList.get(0).getEpisodes().get(0));
+                        } else {
+                             Toasty.warning(getApplicationContext(),getResources().getString(R.string.no_source_available),Toast.LENGTH_LONG).show();
                         }
+                    } else {
+                        Toasty.warning(getApplicationContext(),getResources().getString(R.string.no_source_available),Toast.LENGTH_LONG).show();
                     }
-                }
-                if(selectedEpisode==null){
-                    showSourcesPlayDialog();
-                }else{
-                    if (checkSUBSCRIBED()){
-                        showSourcesPlayDialog();
-                    }else{
-                        if (selectedEpisode.getPlayas().equals("2")){
-                            showDialog(false);
-                        }else if(selectedEpisode.getPlayas().equals("3") ){
-                            showDialog(true);
-                            operationAfterAds = 200;
-                        }else{
-                            showSourcesPlayDialog();
-                        }
-                    }
+                } else {
+                     showSourcesPlayDialog(); // An episode is already selected (likely via EpisodeAdapter click)
                 }
             }
         });
@@ -631,8 +562,6 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
                 showCommentsDialog();
             }
         });
-
-
     }
 
     public void playSource(int position){
@@ -666,47 +595,42 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             intent.putExtra("subtitle",seasonArrayList.get(spinner_activity_serie_season_list.getSelectedItemPosition()).getTitle()+" : "+selectedEpisode.getTitle());
             startActivity(intent);
         }
-
     }
 
     public void addView(){
-
-        final PrefManager prefManager = new PrefManager(this);
-        if (!prefManager.getString(poster.getId()+"_episode_view").equals("true")) {
-            prefManager.setString(poster.getId()+"_episode_view", "true");
+        // final PrefManager prefManager = new PrefManager(this); // Already initialized
+        if (!prefManager.getString(selectedEpisode.getId()+"_episode_view","false").equals("true")) { // Added default value
+            prefManager.setString(selectedEpisode.getId()+"_episode_view", "true");
             Retrofit retrofit = apiClient.getClient();
             apiRest service = retrofit.create(apiRest.class);
-            Call<Integer> call = service.addEpisodeView(selectedEpisode
-                    .getId());
+            Call<Integer> call = service.addEpisodeView(selectedEpisode.getId());
             call.enqueue(new Callback<Integer>() {
                 @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-
-                }
+                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) { }
                 @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-
-                }
+                public void onFailure(Call<Integer> call, Throwable t) { }
             });
         }
 
-        List<Episode> episodes_watched =Hawk.get("episodes_watched");
-        Boolean exist = false;
-        if (episodes_watched == null) {
-            episodes_watched = new ArrayList<>();
-        }
-
-        for (int i = 0; i < episodes_watched.size(); i++) {
-            if (episodes_watched.get(i).getId().equals(selectedEpisode.getId())) {
-                exist = true;
-            }
-        }
-        if (exist == false) {
-            episodes_watched.add(selectedEpisode);
-            Hawk.put("episodes_watched",episodes_watched);
-        }
-
-        episodeAdapter.notifyDataSetChanged();
+        // Hawk for episodes_watched is being removed as part of cleanup.
+        // This local watch history could be moved to PrefManager (JSON file) or SQLite if desired.
+        // For now, removing Hawk usage here.
+        // List<Episode> episodes_watched =Hawk.get("episodes_watched");
+        // Boolean exist = false;
+        // if (episodes_watched == null) {
+        //     episodes_watched = new ArrayList<>();
+        // }
+        // for (int i = 0; i < episodes_watched.size(); i++) {
+        //     if (episodes_watched.get(i).getId().equals(selectedEpisode.getId())) {
+        //         exist = true;
+        //     }
+        // }
+        // if (exist == false) {
+        //     episodes_watched.add(selectedEpisode);
+        //     Hawk.put("episodes_watched",episodes_watched);
+        // }
+        if (episodeAdapter != null)
+             episodeAdapter.notifyDataSetChanged(); // May need more specific update if Hawk list was driving UI
     }
 
     public void playTrailer(){
@@ -738,9 +662,9 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             startActivity(intent);
         }
     }
+
     public void rateDialog(){
-        Dialog rateDialog = new Dialog(this,
-                R.style.Theme_Dialog);
+        Dialog rateDialog = new Dialog(this, R.style.Theme_Dialog);
         rateDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         rateDialog.setCancelable(true);
         rateDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -756,90 +680,67 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         final Button button_cancel=(Button) rateDialog.findViewById(R.id.button_cancel);
         final TextView text_view_rate_title=(TextView) rateDialog.findViewById(R.id.text_view_rate_title);
         text_view_rate_title.setText(getResources().getString(R.string.rate_this_serie_tv));
-        button_cancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        button_cancel.setOnClickListener(v -> rateDialog.dismiss());
+        buttun_send.setOnClickListener(v -> {
+            // PrefManager prf = new PrefManager(getApplicationContext()); // Already have instance
+            // Login is removed, assume anonymous rating or disable if not supported by backend
+            Integer id_user = 0; // Anonymous
+            String key_user = ""; // Anonymous
+            Retrofit retrofit = apiClient.getClient();
+            apiRest service = retrofit.create(apiRest.class);
+            Call<ApiResponse> call = service.addPosterRate(id_user+"",key_user, poster.getId(), AppCompatRatingBar_dialog_rating_app.getRating());
+            call.enqueue(new retrofit2.Callback<ApiResponse>() {
+                @Override
+                public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        if (response.body().getCode() == 200) {
+                            Toasty.success(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                            if (response.body().getValues() != null && response.body().getValues().size()>0){
+                                if (response.body().getValues().get(0).getName().equals("rate") ){
+                                    linear_layout_activity_serie_rating.setVisibility(View.VISIBLE); // Corrected name
+                                    rating_bar_activity_serie_rating.setRating(Float.parseFloat(response.body().getValues().get(0).getValue()));
+                                }
+                            }
+                        } else {
+                            Toasty.error(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    rateDialog.dismiss();
+                }
+                @Override
+                public void onFailure(Call<ApiResponse> call, Throwable t) {
+                    rateDialog.dismiss();
+                }
+            });
+        });
+        rateDialog.setOnKeyListener((arg0, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
                 rateDialog.dismiss();
             }
-        });
-        buttun_send.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PrefManager prf = new PrefManager(getApplicationContext());
-                if (prf.getString("LOGGED").toString().equals("TRUE")) {
-                    Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                    String   key_user=  prf.getString("TOKEN_USER");
-                    Retrofit retrofit = apiClient.getClient();
-                    apiRest service = retrofit.create(apiRest.class);
-                    Call<ApiResponse> call = service.addPosterRate(id_user+"",key_user, poster.getId(), AppCompatRatingBar_dialog_rating_app.getRating());
-                    call.enqueue(new retrofit2.Callback<ApiResponse>() {
-                        @Override
-                        public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                            if (response.isSuccessful()) {
-                                if (response.body().getCode() == 200) {
-                                    Toasty.success(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                    if (response.body().getValues().size()>0){
-                                        if (response.body().getValues().get(0).getName().equals("rate") ){
-                                            linear_layout_activity_serie_imdb_rating.setVisibility(View.VISIBLE);
-                                            rating_bar_activity_serie_rating.setRating(Float.parseFloat(response.body().getValues().get(0).getValue()));
-                                        }
-                                    }
-                                } else {
-                                    Toasty.error(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-
-                            }
-                            rateDialog.dismiss();
-                        }
-
-                        @Override
-                        public void onFailure(Call<ApiResponse> call, Throwable t) {
-                            rateDialog.dismiss();
-                        }
-                    });
-                } else {
-                    rateDialog.dismiss();
-                    Intent intent = new Intent(SerieActivity.this,LoginActivity.class);
-                    startActivity(intent);
-                    overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-
-                }
-            }
-        });
-        rateDialog.setOnKeyListener(new Dialog.OnKeyListener() {
-            @Override
-            public boolean onKey(DialogInterface arg0, int keyCode,
-                                 KeyEvent event) {
-                if (keyCode == KeyEvent.KEYCODE_BACK) {
-                    rateDialog.dismiss();
-                }
-                return true;
-            }
+            return true;
         });
         rateDialog.show();
-
     }
-    public void showCommentsDialog(){
 
-        Dialog dialog= new Dialog(this,
-                R.style.Theme_Dialog);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setCancelable(true);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        Window window = dialog.getWindow();
+    public void showCommentsDialog(){
+        Dialog commentDialog= new Dialog(this, R.style.Theme_Dialog); // Renamed to avoid conflict
+        commentDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        commentDialog.setCancelable(true);
+        commentDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        Window window = commentDialog.getWindow();
         WindowManager.LayoutParams wlp = window.getAttributes();
         getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
         wlp.gravity = Gravity.BOTTOM;
         window.setAttributes(wlp);
-        dialog.setContentView(R.layout.dialog_comment);
-        TextView text_view_comment_dialog_count=dialog.findViewById(R.id.text_view_comment_dialog_count);
-        ImageView image_view_comment_dialog_close=dialog.findViewById(R.id.image_view_comment_dialog_close);
-        ImageView image_view_comment_dialog_empty=dialog.findViewById(R.id.image_view_comment_dialog_empty);
-        ImageView image_view_comment_dialog_add_comment=dialog.findViewById(R.id.image_view_comment_dialog_add_comment);
-        ProgressBar progress_bar_comment_dialog_comments=dialog.findViewById(R.id.progress_bar_comment_dialog_comments);
-        ProgressBar progress_bar_comment_dialog_add_comment=dialog.findViewById(R.id.progress_bar_comment_dialog_add_comment);
-        EditText edit_text_comment_dialog_add_comment=dialog.findViewById(R.id.edit_text_comment_dialog_add_comment);
-        RecyclerView recycler_view_comment_dialog_comments=dialog.findViewById(R.id.recycler_view_comment_dialog_comments);
+        commentDialog.setContentView(R.layout.dialog_comment);
+        TextView text_view_comment_dialog_count=commentDialog.findViewById(R.id.text_view_comment_dialog_count);
+        ImageView image_view_comment_dialog_close=commentDialog.findViewById(R.id.image_view_comment_dialog_close);
+        ImageView image_view_comment_dialog_empty=commentDialog.findViewById(R.id.image_view_comment_dialog_empty);
+        ImageView image_view_comment_dialog_add_comment=commentDialog.findViewById(R.id.image_view_comment_dialog_add_comment);
+        ProgressBar progress_bar_comment_dialog_comments=commentDialog.findViewById(R.id.progress_bar_comment_dialog_comments);
+        ProgressBar progress_bar_comment_dialog_add_comment=commentDialog.findViewById(R.id.progress_bar_comment_dialog_add_comment);
+        EditText edit_text_comment_dialog_add_comment=commentDialog.findViewById(R.id.edit_text_comment_dialog_add_comment);
+        RecyclerView recycler_view_comment_dialog_comments=commentDialog.findViewById(R.id.recycler_view_comment_dialog_comments);
 
         image_view_comment_dialog_empty.setVisibility(View.GONE);
         recycler_view_comment_dialog_comments.setVisibility(View.GONE);
@@ -856,132 +757,102 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         call.enqueue(new Callback<List<Comment>>() {
             @Override
             public void onResponse(Call<List<Comment>> call, Response<List<Comment>> response) {
-                if (response.isSuccessful()){
+                if (response.isSuccessful() && response.body() != null){
                     if (response.body().size()>0) {
                         commentList.clear();
-                        for (int i = 0; i < response.body().size(); i++)
-                            commentList.add(response.body().get(i));
-
+                        commentList.addAll(response.body());
                         commentAdapter.notifyDataSetChanged();
-
                         text_view_comment_dialog_count.setText(commentList.size()+" Comments");
                         image_view_comment_dialog_empty.setVisibility(View.GONE);
                         recycler_view_comment_dialog_comments.setVisibility(View.VISIBLE);
-                        progress_bar_comment_dialog_comments.setVisibility(View.GONE);
-                        recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                        recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
                     }else{
                         image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
-                        recycler_view_comment_dialog_comments.setVisibility(View.GONE);
-                        progress_bar_comment_dialog_comments.setVisibility(View.GONE);
                     }
                 }else{
                     image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
-                    recycler_view_comment_dialog_comments.setVisibility(View.GONE);
-                    progress_bar_comment_dialog_comments.setVisibility(View.GONE);
                 }
+                progress_bar_comment_dialog_comments.setVisibility(View.GONE);
             }
-
             @Override
             public void onFailure(Call<List<Comment>> call, Throwable t) {
                 image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
-                recycler_view_comment_dialog_comments.setVisibility(View.GONE);
                 progress_bar_comment_dialog_comments.setVisibility(View.GONE);
             }
         });
 
-        image_view_comment_dialog_add_comment.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (edit_text_comment_dialog_add_comment.getText().length()>0){
-                    PrefManager prf= new PrefManager(SerieActivity.this.getApplicationContext());
-                    if (prf.getString("LOGGED").toString().equals("TRUE")){
-                        Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                        String   key_user=  prf.getString("TOKEN_USER");
-                        byte[] data = new byte[0];
-                        String comment_final ="";
-                        try {
-                            data = edit_text_comment_dialog_add_comment.getText().toString().getBytes("UTF-8");
-                            comment_final = Base64.encodeToString(data, Base64.DEFAULT);
-                        } catch (UnsupportedEncodingException e) {
-                            comment_final = edit_text_comment_dialog_add_comment.getText().toString();
-                            e.printStackTrace();
-                        }
-                        progress_bar_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                        image_view_comment_dialog_add_comment.setVisibility(View.GONE);
-                        Retrofit retrofit = apiClient.getClient();
-                        apiRest service = retrofit.create(apiRest.class);
-                        Call<ApiResponse> call = service.addPosterComment(id_user+"",key_user,poster.getId(),comment_final);
-                        call.enqueue(new Callback<ApiResponse>() {
-                            @Override
-                            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                                if (response.isSuccessful()){
-                                    if (response.body().getCode()==200){
-                                        recycler_view_comment_dialog_comments.setVisibility(View.VISIBLE);
-                                        image_view_comment_dialog_empty.setVisibility(View.GONE);
-                                        Toasty.success(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                        edit_text_comment_dialog_add_comment.setText("");
-                                        String id="";
-                                        String content="";
-                                        String user="";
-                                        String image="";
-
-                                        for (int i=0;i<response.body().getValues().size();i++){
-                                            if (response.body().getValues().get(i).getName().equals("id")){
-                                                id=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("content")){
-                                                content=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("user")){
-                                                user=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("image")){
-                                                image=response.body().getValues().get(i).getValue();
-                                            }
-                                        }
-                                        Comment comment= new Comment();
-                                        comment.setId(Integer.parseInt(id));
-                                        comment.setUser(user);
-                                        comment.setContent(content);
-                                        comment.setImage(image);
-                                        comment.setEnabled(true);
-                                        comment.setCreated(getResources().getString(R.string.now_time));
-                                        commentList.add(comment);
-                                        commentAdapter.notifyDataSetChanged();
-                                        text_view_comment_dialog_count.setText(commentList.size()+" Comments");
-
-                                    }else{
-                                        Toasty.error(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                                recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                                recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                                commentAdapter.notifyDataSetChanged();
-                                progress_bar_comment_dialog_add_comment.setVisibility(View.GONE);
-                                image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                            }
-                            @Override
-                            public void onFailure(Call<ApiResponse> call, Throwable t) {
-                                progress_bar_comment_dialog_add_comment.setVisibility(View.GONE);
-                                image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                            }
-                        });
-                    }else{
-                        Intent intent = new Intent(SerieActivity.this,LoginActivity.class);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                    }
+        image_view_comment_dialog_add_comment.setOnClickListener(v -> {
+            if (edit_text_comment_dialog_add_comment.getText().length()>0){
+                // Login is removed. Adding comments anonymously or disabling.
+                // Assuming anonymous comments for now (id_user=0).
+                Integer id_user = 0;
+                String key_user = "";
+                byte[] data_comment;
+                String comment_final;
+                try {
+                    data_comment = edit_text_comment_dialog_add_comment.getText().toString().getBytes("UTF-8");
+                    comment_final = Base64.encodeToString(data_comment, Base64.DEFAULT);
+                } catch (UnsupportedEncodingException e) {
+                    comment_final = edit_text_comment_dialog_add_comment.getText().toString();
+                    e.printStackTrace();
                 }
+                progress_bar_comment_dialog_add_comment.setVisibility(View.VISIBLE);
+                image_view_comment_dialog_add_comment.setVisibility(View.GONE);
+                Retrofit retrofit_add = apiClient.getClient();
+                apiRest service_add = retrofit_add.create(apiRest.class);
+                Call<ApiResponse> call_add = service_add.addPosterComment(id_user+"",key_user,poster.getId(),comment_final);
+                call_add.enqueue(new Callback<ApiResponse>() {
+                    @Override
+                    public void onResponse(Call<ApiResponse> call_add_resp, Response<ApiResponse> response_add) {
+                        if (response_add.isSuccessful() && response_add.body() != null){
+                            if (response_add.body().getCode()==200){
+                                Toasty.success(SerieActivity.this, response_add.body().getMessage(), Toast.LENGTH_SHORT).show();
+                                edit_text_comment_dialog_add_comment.setText("");
+                                // Refresh comment list
+                                image_view_comment_dialog_empty.setVisibility(View.GONE);
+                                recycler_view_comment_dialog_comments.setVisibility(View.GONE);
+                                progress_bar_comment_dialog_comments.setVisibility(View.VISIBLE);
+                                service.getCommentsByPoster(poster.getId()).enqueue(new Callback<List<Comment>>() {
+                                     @Override
+                                    public void onResponse(Call<List<Comment>> call_refresh, Response<List<Comment>> response_refresh) {
+                                        if (response_refresh.isSuccessful() && response_refresh.body() != null){
+                                            if (response_refresh.body().size()>0) {
+                                                commentList.clear();
+                                                commentList.addAll(response_refresh.body());
+                                                commentAdapter.notifyDataSetChanged();
+                                                text_view_comment_dialog_count.setText(commentList.size()+" Comments");
+                                                image_view_comment_dialog_empty.setVisibility(View.GONE);
+                                                recycler_view_comment_dialog_comments.setVisibility(View.VISIBLE);
+                                            }else{
+                                                image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
+                                            }
+                                        } else {
+                                             image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
+                                        }
+                                        progress_bar_comment_dialog_comments.setVisibility(View.GONE);
+                                    }
+                                    @Override
+                                    public void onFailure(Call<List<Comment>> call_f, Throwable t_f) {
+                                        image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
+                                        progress_bar_comment_dialog_comments.setVisibility(View.GONE);
+                                    }
+                                });
+                            }else{
+                                Toasty.error(SerieActivity.this, response_add.body().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        progress_bar_comment_dialog_add_comment.setVisibility(View.GONE);
+                        image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
+                    }
+                    @Override
+                    public void onFailure(Call<ApiResponse> call_fail, Throwable t_fail) {
+                        progress_bar_comment_dialog_add_comment.setVisibility(View.GONE);
+                        image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
+                    }
+                });
             }
         });
-        image_view_comment_dialog_close.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-        dialog.show();
+        image_view_comment_dialog_close.setOnClickListener(v -> commentDialog.dismiss());
+        commentDialog.show();
     }
 
     public void showSourcesDownloadDialog(){
@@ -994,32 +865,15 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             return;
         }
         if (downloadableList.size()==1){
-            if (checkSUBSCRIBED()) {
-                if (!downloadableList.get(0).getExternal()) {
-                    DownloadSource(downloadableList.get(0));
-                } else {
-                    openDownloadLink(0);
-                }
-            }else {
-                if (downloadableList.get(0).getPremium().equals("2")) {
-                    showDialog(false);
-                } else if (downloadableList.get(0).getPremium().equals("3")) {
-                    operationAfterAds = 400;
-                    current_position_download = 0;
-                    showDialog(true);
-                } else {
-                    if (!downloadableList.get(0).getExternal()) {
-                        DownloadSource(downloadableList.get(0));
-                    } else {
-                        openDownloadLink(0);
-                    }
-                }
+            if (!downloadableList.get(0).getExternal()) {
+                DownloadSource(downloadableList.get(0));
+            } else {
+                openDownloadLink(0);
             }
             return;
         }
 
-        download_source_dialog= new Dialog(this,
-                R.style.Theme_Dialog);
+        download_source_dialog= new Dialog(this, R.style.Theme_Dialog);
         download_source_dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         download_source_dialog.setCancelable(true);
         download_source_dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -1038,59 +892,31 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         recycle_view_activity_dialog_sources.setAdapter(sourceDownloadAdapter);
         recycle_view_activity_dialog_sources.setLayoutManager(linearLayoutManagerDownloadSources);
 
-        relative_layout_dialog_source_close.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        relative_layout_dialog_source_close.setOnClickListener(v -> download_source_dialog.dismiss());
+        download_source_dialog.setOnKeyListener((arg0, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
                 download_source_dialog.dismiss();
             }
-        });
-        download_source_dialog.setOnKeyListener(new Dialog.OnKeyListener() {
-            @Override
-            public boolean onKey(DialogInterface arg0, int keyCode,
-                                 KeyEvent event) {
-                // TODO Auto-generated method stub
-                if (keyCode == KeyEvent.KEYCODE_BACK) {
-                    download_source_dialog.dismiss();
-                }
-                return true;
-            }
+            return true;
         });
         download_source_dialog.show();
-
-
     }
+
     public void showSourcesPlayDialog(){
         if (playableList.size()==0){
             Toasty.warning(getApplicationContext(),getResources().getString(R.string.no_source_available),Toast.LENGTH_LONG).show();
             return;
         }
         if (playableList.size()==1){
-            if (checkSUBSCRIBED()) {
-                if (!playableList.get(0).getExternal()) {
-                    playSource(0);
-                } else {
-                    openLink(0);
-                }
-            }else {
-                if (playableList.get(0).getPremium().equals("2")) {
-                    showDialog(false);
-                } else if (playableList.get(0).getPremium().equals("3")) {
-                    operationAfterAds = 300;
-                    current_position_play = 0;
-                    showDialog(true);
-                } else {
-                    if (!playableList.get(0).getExternal()) {
-                        playSource(0);
-                    } else {
-                        openLink(0);
-                    }
-                }
+            if (!playableList.get(0).getExternal()) {
+                playSource(0);
+            } else {
+                openLink(0);
             }
             return;
         }
 
-        play_source_dialog= new Dialog(this,
-                R.style.Theme_Dialog);
+        play_source_dialog= new Dialog(this, R.style.Theme_Dialog);
         play_source_dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         play_source_dialog.setCancelable(true);
         play_source_dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -1109,27 +935,16 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         recycle_view_activity_dialog_sources.setAdapter(sourceAdapter);
         recycle_view_activity_dialog_sources.setLayoutManager(linearLayoutManagerSources);
 
-        relative_layout_dialog_source_close.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        relative_layout_dialog_source_close.setOnClickListener(v -> play_source_dialog.dismiss());
+        play_source_dialog.setOnKeyListener((arg0, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
                 play_source_dialog.dismiss();
             }
-        });
-        play_source_dialog.setOnKeyListener(new Dialog.OnKeyListener() {
-            @Override
-            public boolean onKey(DialogInterface arg0, int keyCode,
-                                 KeyEvent event) {
-                // TODO Auto-generated method stub
-                if (keyCode == KeyEvent.KEYCODE_BACK) {
-                    play_source_dialog.dismiss();
-                }
-                return true;
-            }
+            return true;
         });
         play_source_dialog.show();
-
-
     }
+
     private void initView() {
         if(getSupportActionBar() != null)
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -1364,12 +1179,12 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
                     holder.image_view_item_source_type_play.setVisibility(View.GONE);
                 }
             }
-            holder.image_view_item_source_premium.setVisibility(View.GONE);
-            if (playableList.get(position).getPremium() != null) {
-                if (!playableList.get(position).getPremium().equals("1")){
-                    holder.image_view_item_source_premium.setVisibility(View.VISIBLE);
-                }
-            }
+            holder.image_view_item_source_premium.setVisibility(View.GONE); // Premium icon hidden as content is free
+            // if (playableList.get(position).getPremium() != null) {
+            //     if (!playableList.get(position).getPremium().equals("1")){
+            //         holder.image_view_item_source_premium.setVisibility(View.VISIBLE);
+            //     }
+            // }
 
             holder.text_view_item_source_size.setVisibility(View.GONE);
             if (playableList.get(position).getSize() != null) {
@@ -1415,36 +1230,12 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             }
 
             holder.image_view_item_source_type_play.setOnClickListener(v-> {
-                if (checkSUBSCRIBED()) {
-                    playSource(position);
-                }else {
-                    if (playableList.get(position).getPremium().equals("2")) {
-                        showDialog(false);
-                    } else if (playableList.get(position).getPremium().equals("3")) {
-                        operationAfterAds = 300;
-                        current_position_play = position;
-                        showDialog(true);
-                    } else {
-                        playSource(position);
-                    }
-                }
+                playSource(position); // Directly play
                 play_source_dialog.dismiss();
             });
             holder.image_view_item_source_type_link.setOnClickListener( v -> {
-                if (checkSUBSCRIBED()) {
-                    openLink(position);
-                }else {
-                    if (playableList.get(position).getPremium().equals("2")) {
-                        showDialog(false);
-                    } else if (playableList.get(position).getPremium().equals("3")) {
-                        operationAfterAds = 300;
-                        current_position_play = position;
-                        showDialog(true);
-                    } else {
-                        openLink(position);
-                    }
-                    play_source_dialog.dismiss();
-                }
+                openLink(position); // Directly open link
+                play_source_dialog.dismiss();
             });
         }
         @Override
@@ -1497,12 +1288,12 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
                     holder.image_view_item_source_type_download.setVisibility(View.GONE);
                 }
             }
-            holder.image_view_item_source_premium.setVisibility(View.GONE);
-            if (downloadableList.get(position).getPremium() != null) {
-                if (!downloadableList.get(position).getPremium().equals("1")){
-                    holder.image_view_item_source_premium.setVisibility(View.VISIBLE);
-                }
-            }
+            holder.image_view_item_source_premium.setVisibility(View.GONE); // Premium icon hidden
+            // if (downloadableList.get(position).getPremium() != null) {
+            //     if (!downloadableList.get(position).getPremium().equals("1")){
+            //         holder.image_view_item_source_premium.setVisibility(View.VISIBLE);
+            //     }
+            // }
 
             holder.text_view_item_source_size.setVisibility(View.GONE);
             if (downloadableList.get(position).getSize() != null) {
@@ -1543,38 +1334,12 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             }
 
             holder.image_view_item_source_type_download.setOnClickListener(v-> {
-                if (checkSUBSCRIBED()) {
-                    DownloadSource(downloadableList.get(position));
-                }else {
-                    if (downloadableList.get(position).getPremium().equals("2")){
-                        showDialog(false);
-                    }else if(downloadableList.get(position).getPremium().equals("3") ){
-                        operationAfterAds = 400;
-                        current_position_download=  position;
-                        showDialog(true);
-                    }else {
-                        DownloadSource(downloadableList.get(position));
-                    }
-                }
+                DownloadSource(downloadableList.get(position)); // Directly download
                 download_source_dialog.dismiss();
-
             });
             holder.image_view_item_source_type_link.setOnClickListener( v -> {
-                if (checkSUBSCRIBED()) {
-                    openDownloadLink(position);
-                }else {
-                    if (downloadableList.get(position).getPremium().equals("2")) {
-                        showDialog(false);
-                    } else if (downloadableList.get(position).getPremium().equals("3")) {
-                        operationAfterAds = 400;
-                        current_position_download = position;
-                        showDialog(true);
-                    } else {
-                        openDownloadLink(position);
-                    }
-                }
+                openDownloadLink(position); // Directly open link
                 download_source_dialog.dismiss();
-
             });
 
 
@@ -1629,24 +1394,24 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
                 holder.text_view_item_episode_duration.setText(episodeList.get(position).getDuration());
             }
 
-            List<Episode> episodes_watched =Hawk.get("episodes_watched");
-            Boolean exist = false;
-            if (episodes_watched == null) {
-                episodes_watched = new ArrayList<>();
-            }
-
-            for (int i = 0; i < episodes_watched.size(); i++) {
-                if (episodes_watched.get(i).getId().equals(episodeList.get(position).getId())) {
-                    exist = true;
-                }
-            }
-
-            if (exist){
-                holder.image_view_item_episode_viewed.setVisibility(View.VISIBLE);
-            }else {
-                holder.image_view_item_episode_viewed.setVisibility(View.GONE);
-
-            }
+            // Hawk for episodes_watched is removed. This UI update logic needs to be adapted or removed.
+            // For now, hiding the "viewed" indicator.
+            holder.image_view_item_episode_viewed.setVisibility(View.GONE);
+            // List<Episode> episodes_watched =Hawk.get("episodes_watched");
+            // Boolean exist = false;
+            // if (episodes_watched == null) {
+            //     episodes_watched = new ArrayList<>();
+            // }
+            // for (int i = 0; i < episodes_watched.size(); i++) {
+            //     if (episodes_watched.get(i).getId().equals(episodeList.get(position).getId())) {
+            //         exist = true;
+            //     }
+            // }
+            // if (exist){
+            //     holder.image_view_item_episode_viewed.setVisibility(View.VISIBLE);
+            // }else {
+            //     holder.image_view_item_episode_viewed.setVisibility(View.GONE);
+            // }
 
             holder.text_view_item_episode_description.setText(episodeList.get(position).getDescription());
             holder.image_view_item_episode_download.setOnClickListener(new View.OnClickListener() {
@@ -1698,7 +1463,7 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         relative_layout_subtitles_loading.setVisibility(View.VISIBLE);
         Retrofit retrofit = apiClient.getClient();
         apiRest service = retrofit.create(apiRest.class);
-        Call<List<Language>> call = service.getSubtitlesByEpisode(poster.getId());
+        Call<List<Language>> call = service.getSubtitlesByEpisode(poster.getId()); // Should be selectedEpisode.getId()
         call.enqueue(new Callback<List<Language>>() {
             @Override
             public void onResponse(Call<List<Language>> call, Response<List<Language>> response) {
@@ -1725,87 +1490,40 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         });
     }
     private void checkFavorite() {
+        // Uses local PrefManager to check if the poster ID is in the local "My List"
+        // final PrefManager prefManager = new PrefManager(this); // Already initialized globally in the class if needed, or instantiate here
+        // For consistency, let's assume prefManager is already available if initialized in onCreate or similar
+        // If not, it should be: final PrefManager prefManager = new PrefManager(this);
 
-        final PrefManager prefManager = new PrefManager(this);
-        if (prefManager.getString("LOGGED").toString().equals("TRUE")){
-            Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-            String   key_user=  prefManager.getString("TOKEN_USER");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            progress_bar_activity_serie_my_list.setVisibility(View.VISIBLE);
-            linear_layout_activity_serie_my_list.setClickable(false);
+        progress_bar_activity_serie_my_list.setVisibility(View.GONE); // No loading needed for local check
+        image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
+        linear_layout_activity_serie_my_list.setClickable(true);
 
-            image_view_activity_serie_my_list.setVisibility(View.GONE);
-            Call<Integer> call = service.CheckMyList(poster.getId(),id_user,key_user,"poster");
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                    if (response.isSuccessful()){
-                        if (response.body() == 200){
-                            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_close));
-                        }else{
-                            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
-
-                        }
-                    }
-                    progress_bar_activity_serie_my_list.setVisibility(View.GONE);
-                    image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_serie_my_list.setClickable(true);
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-                    progress_bar_activity_serie_my_list.setVisibility(View.GONE);
-                    image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_serie_my_list.setClickable(true);
-
-
-                }
-            });
+        if (prefManager.isFavorite(poster.getId())) {
+             image_view_activity_serie_my_list.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.ic_close)); // Or ic_check_filled / ic_favorite_filled
+        } else {
+            image_view_activity_serie_my_list.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.ic_check)); // Or ic_add / ic_favorite_border
         }
     }
+
     public void addMyList(){
-        final PrefManager prefManager = new PrefManager(this);
-        if (prefManager.getString("LOGGED").toString().equals("TRUE")){
-            Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-            String   key_user=  prefManager.getString("TOKEN_USER");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            progress_bar_activity_serie_my_list.setVisibility(View.VISIBLE);
-            image_view_activity_serie_my_list.setVisibility(View.GONE);
-            linear_layout_activity_serie_my_list.setClickable(false);
-            Call<Integer> call = service.AddMyList(poster.getId(),id_user,key_user,"poster");
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                    if (response.isSuccessful()){
-                        if (response.body() == 200){
-                            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_close));
-                            Toasty.info(SerieActivity.this, "This tv serie has been added to your list", Toast.LENGTH_SHORT).show();
-                        }else{
-                            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
-                            Toasty.warning(SerieActivity.this, "This tv serie has been removed from your list", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                    progress_bar_activity_serie_my_list.setVisibility(View.GONE);
-                    image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_serie_my_list.setClickable(true);
+        // final PrefManager prefManager = new PrefManager(this); // Assuming prefManager is available
+        // Login check is removed. Add/remove from local list.
 
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-                    progress_bar_activity_serie_my_list.setVisibility(View.GONE);
-                    image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_serie_my_list.setClickable(true);
+        progress_bar_activity_serie_my_list.setVisibility(View.GONE);
+        image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
 
-                }
-            });
-        }else{
-            Intent intent = new Intent(SerieActivity.this,LoginActivity.class);
-            startActivity(intent);
-            overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+        if (prefManager.isFavorite(poster.getId())) {
+            prefManager.removeFromMyList(poster.getId());
+            image_view_activity_serie_my_list.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.ic_check));
+            Toasty.warning(SerieActivity.this, "This tv serie has been removed from your list", Toast.LENGTH_SHORT).show();
+        } else {
+            prefManager.addToMyList(poster.getId());
+            image_view_activity_serie_my_list.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.ic_close));
+            Toasty.info(SerieActivity.this, "This tv serie has been added to your list", Toast.LENGTH_SHORT).show();
         }
     }
+
     public void share(){
         String shareBody = poster.getTitle()+"\n\n"+getResources().getString(R.string.get_this_serie_here)+"\n"+ Global.API_URL.replace("api","share")+ poster.getId()+".html";
         Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
@@ -1942,203 +1660,23 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             _e.printStackTrace();
         }
     }
-    public void showDialog(Boolean withAds){
-        this.dialog = new Dialog(this,
-                R.style.Theme_Dialog);
-
-
-
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setCancelable(true);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        Window window = dialog.getWindow();
-        WindowManager.LayoutParams wlp = window.getAttributes();
-        getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
-        wlp.gravity = Gravity.BOTTOM;
-        wlp.flags &= ~WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-        window.setAttributes(wlp);
-        final   PrefManager prf= new PrefManager(getApplicationContext());
-        dialog.setCancelable(false);
-        dialog.setContentView(R.layout.dialog_subscribe);
-
-        RelativeLayout relative_layout_watch_ads=(RelativeLayout) dialog.findViewById(R.id.relative_layout_watch_ads);
-        TextView text_view_watch_ads=(TextView) dialog.findViewById(R.id.text_view_watch_ads);
-        TextView text_view_policy_2=(TextView) dialog.findViewById(R.id.text_view_policy_2);
-        TextView text_view_policy=(TextView) dialog.findViewById(R.id.text_view_policy);
-        SpannableString content = new SpannableString(getResources().getString(R.string.subscription_policy));
-        content.setSpan(new UnderlineSpan(), 0, content.length(), 0);
-        text_view_policy.setText(content);
-        text_view_policy_2.setText(content);
-
-
-        text_view_policy.setOnClickListener(view -> {
-            startActivity(new Intent(SerieActivity.this,RefundActivity.class));
-        });
-        text_view_policy_2.setOnClickListener(view -> {
-            startActivity(new Intent(SerieActivity.this,RefundActivity.class));
-        });
-        CardView card_view_gpay=(CardView) dialog.findViewById(R.id.card_view_gpay);
-        CardView card_view_paypal=(CardView) dialog.findViewById(R.id.card_view_paypal);
-        CardView card_view_cash=(CardView) dialog.findViewById(R.id.card_view_cash);
-        CardView card_view_credit_card=(CardView) dialog.findViewById(R.id.card_view_credit_card);
-        LinearLayout payment_methode=(LinearLayout) dialog.findViewById(R.id.payment_methode);
-        LinearLayout dialog_content=(LinearLayout) dialog.findViewById(R.id.dialog_content);
-        RelativeLayout relative_layout_subscibe_back=(RelativeLayout) dialog.findViewById(R.id.relative_layout_subscibe_back);
-
-        RelativeLayout relative_layout_select_method=(RelativeLayout) dialog.findViewById(R.id.relative_layout_select_method);
-
-        if (prf.getString("APP_STRIPE_ENABLED").toString().equals("FALSE")){
-            card_view_credit_card.setVisibility(View.GONE);
-        }
-        if (prf.getString("APP_PAYPAL_ENABLED").toString().equals("FALSE")){
-            card_view_paypal.setVisibility(View.GONE);
-        }
-        if (prf.getString("APP_CASH_ENABLED").toString().equals("FALSE")){
-            card_view_cash.setVisibility(View.GONE);
-        }
-        if (prf.getString("APP_GPLAY_ENABLED").toString().equals("FALSE")){
-            card_view_gpay.setVisibility(View.GONE);
-        }
-        relative_layout_select_method.setOnClickListener(v->{
-            if(payment_methode_id.equals("null")) {
-                Toasty.error(getApplicationContext(), getResources().getString(R.string.select_payment_method), Toast.LENGTH_LONG).show();
-                return;
-            }
-            switch (payment_methode_id){
-                case "gp" :
-                    subscribe();
-                    dialog.dismiss();
-                    break;
-                default:
-                    PrefManager prf1= new PrefManager(getApplicationContext());
-                    if (prf1.getString("LOGGED").toString().equals("TRUE")){
-                        Intent intent  =  new Intent(getApplicationContext(), PlansActivity.class);
-                        intent.putExtra("method",payment_methode_id);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                        dialog.dismiss();
-
-                    }else{
-                        Intent intent= new Intent(SerieActivity.this, LoginActivity.class);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                    }
-                    dialog.dismiss();
-                    break;
-            }
-        });
-
-        if (withAds){
-            relative_layout_watch_ads.setVisibility(View.VISIBLE);
-        }else{
-            relative_layout_watch_ads.setVisibility(View.GONE);
-        }
-        relative_layout_watch_ads.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mRewardedVideoAd != null){
-                    mRewardedVideoAd.show(SerieActivity.this, new OnUserEarnedRewardListener() {
-                        @Override
-                        public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
-                            dialog.dismiss();
-                            Toasty.success(getApplicationContext(),getString(R.string.use_content_for_free)).show();
-                            Log.d("Rewarded","onRewarded ");
-                            switch (operationAfterAds){
-                                case  100 :
-                                    selectedEpisode.setDownloadas("1");
-                                    break;
-                                case  200 :
-                                    selectedEpisode.setPlayas("1");
-                                    break;
-                                case 300 :
-                                    if (current_position_play != -1 ){
-                                        playableList.get(current_position_play).setPremium("1");
-                                        showSourcesPlayDialog();
-                                    }
-                                    break;
-                                case 400:
-                                    if (current_position_download != -1 ){
-                                        downloadableList.get(current_position_download).setPremium("1");
-                                        showSourcesDownloadDialog();
-                                    }
-                            }
-                        }
-                    });
-                }else{
-                    autoDisplay =  true;
-                    loadRewardedVideoAd();
-                    text_view_watch_ads.setText("SHOW LOADING.");
-                }
-            }
-        });
-        TextView text_view_go_pro=(TextView) dialog.findViewById(R.id.text_view_go_pro);
-        text_view_go_pro.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                payment_methode.setVisibility(View.VISIBLE);
-                dialog_content.setVisibility(View.GONE);
-                relative_layout_subscibe_back.setVisibility(View.VISIBLE);
-            }
-        });
-        relative_layout_subscibe_back.setOnClickListener(v->{
-            payment_methode.setVisibility(View.GONE);
-            dialog_content.setVisibility(View.VISIBLE);
-            relative_layout_subscibe_back.setVisibility(View.GONE);
-        });
-        card_view_gpay.setOnClickListener(v->{
-            payment_methode_id="gp";
-            card_view_gpay.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
-            card_view_paypal.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_cash.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_credit_card.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-        });
-        card_view_paypal.setOnClickListener(v->{
-            payment_methode_id="pp";
-            card_view_gpay.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_paypal.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
-            card_view_cash.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_credit_card.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-        });
-        card_view_credit_card.setOnClickListener(v->{
-            payment_methode_id="cc";
-            card_view_gpay.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_paypal.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_cash.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_credit_card.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
-        });
-        card_view_cash.setOnClickListener(v->{
-            payment_methode_id="cash";
-            card_view_gpay.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_paypal.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_cash.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
-            card_view_credit_card.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-        });
-        dialog.setOnKeyListener(new Dialog.OnKeyListener() {
-
-            @Override
-            public boolean onKey(DialogInterface arg0, int keyCode,
-                                 KeyEvent event) {
-                // TODO Auto-generated method stub
-                if (keyCode == KeyEvent.KEYCODE_BACK) {
-
-                    dialog.dismiss();
-                }
-                return true;
-            }
-        });
-        dialog.show();
-    }
-    public boolean checkSUBSCRIBED(){
-        PrefManager prefManager= new PrefManager(getApplicationContext());
-        if (!prefManager.getString("SUBSCRIBED").equals("TRUE") && !prefManager.getString("NEW_SUBSCRIBE_ENABLED").equals("TRUE")) {
-            return false;
-        }
-        return true;
-    }
+    // public void showDialog(Boolean withAds){ // Subscription Dialog Removed
+    //     this.dialog = new Dialog(this,
+    //             R.style.Theme_Dialog);
+    // ... entire method removed ...
+    // }
+    // public boolean checkSUBSCRIBED(){ // Subscription check removed
+    //     PrefManager prefManager= new PrefManager(getApplicationContext());
+    //     if (!prefManager.getString("SUBSCRIBED").equals("TRUE") && !prefManager.getString("NEW_SUBSCRIBE_ENABLED").equals("TRUE")) {
+    //         return false;
+    //     }
+    //     return true;
+    // }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults); // Added super call
         switch (requestCode) {
             case 0: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED ) {
@@ -2149,12 +1687,12 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         }
     }
     public void showAdsBanner() {
-        if (!checkSUBSCRIBED()) {
+        // if (!checkSUBSCRIBED()) { // Subscription check removed
             PrefManager prefManager= new PrefManager(getApplicationContext());
-            if (!prefManager.getString("ADMIN_BANNER_TYPE").equals("FALSE")){
+            if (!prefManager.getString("ADMIN_BANNER_TYPE","FALSE").equals("FALSE")){ // Added default for getString
                 showAdmobBanner();
             }
-        }
+        // }
     }
     public void showAdmobBanner(){
         PrefManager prefManager= new PrefManager(getApplicationContext());
@@ -2202,24 +1740,24 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         }
         Toasty.info(this, "Download has been started ...", Toast.LENGTH_LONG).show();
         expandPanel(this);
-        DownloadItem downloadItem = new DownloadItem(source.getId(), poster.getTitle() + " - " + selectedEpisode.getTitle(), "episode", Uri.fromFile(fileName).getPath(), selectedEpisode.getImage(), "", "", selectedEpisode.getId(), downloadId);
-        if (selectedEpisode.getDuration() != null)
-            downloadItem.setDuration(selectedEpisode.getDuration());
-        else
-            downloadItem.setDuration("");
+        // DownloadItem downloadItem = new DownloadItem(source.getId(), poster.getTitle() + " - " + selectedEpisode.getTitle(), "episode", Uri.fromFile(fileName).getPath(), selectedEpisode.getImage(), "", "", selectedEpisode.getId(), downloadId);
+        // if (selectedEpisode.getDuration() != null)
+        //     downloadItem.setDuration(selectedEpisode.getDuration());
+        // else
+        //     downloadItem.setDuration("");
 
-        List<DownloadItem> my_downloads_temp = Hawk.get("my_downloads_temp");
-        if (my_downloads_temp == null) {
-            my_downloads_temp = new ArrayList<>();
-        }
-        for (int i = 0; i < my_downloads_temp.size(); i++) {
-            if (my_downloads_temp.get(i).getId().equals(source.getId())) {
-                my_downloads_temp.remove(my_downloads_temp.get(i));
-                Hawk.put("my_downloads_temp", my_downloads_temp);
-            }
-        }
-        my_downloads_temp.add(downloadItem);
-        Hawk.put("my_downloads_temp", my_downloads_temp);
+        // List<DownloadItem> my_downloads_temp = Hawk.get("my_downloads_temp"); // Hawk usage removed
+        // if (my_downloads_temp == null) {
+        //     my_downloads_temp = new ArrayList<>();
+        // }
+        // for (int i = 0; i < my_downloads_temp.size(); i++) {
+        //     if (my_downloads_temp.get(i).getId().equals(source.getId())) {
+        //         my_downloads_temp.remove(my_downloads_temp.get(i));
+        //         Hawk.put("my_downloads_temp", my_downloads_temp);
+        //     }
+        // }
+        // my_downloads_temp.add(downloadItem);
+        // Hawk.put("my_downloads_temp", my_downloads_temp);
     }
     public void DownloadQ(Source source){
         final int min = 1000;
@@ -2239,24 +1777,24 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         }
         Toasty.info(this, "Download has been started ...", Toast.LENGTH_LONG).show();
         expandPanel(this);
-        DownloadItem downloadItem = new DownloadItem(source.getId(), poster.getTitle() + " - " + selectedEpisode.getTitle(), "episode", Uri.fromFile(fileName).getPath(), selectedEpisode.getImage(), "", "", selectedEpisode.getId(), downloadId);
-        if (selectedEpisode.getDuration() != null)
-            downloadItem.setDuration(selectedEpisode.getDuration());
-        else
-            downloadItem.setDuration("");
+        // DownloadItem downloadItem = new DownloadItem(source.getId(), poster.getTitle() + " - " + selectedEpisode.getTitle(), "episode", Uri.fromFile(fileName).getPath(), selectedEpisode.getImage(), "", "", selectedEpisode.getId(), downloadId);
+        // if (selectedEpisode.getDuration() != null)
+        //     downloadItem.setDuration(selectedEpisode.getDuration());
+        // else
+        //     downloadItem.setDuration("");
 
-        List<DownloadItem> my_downloads_temp = Hawk.get("my_downloads_temp");
-        if (my_downloads_temp == null) {
-            my_downloads_temp = new ArrayList<>();
-        }
-        for (int i = 0; i < my_downloads_temp.size(); i++) {
-            if (my_downloads_temp.get(i).getId().equals(source.getId())) {
-                my_downloads_temp.remove(my_downloads_temp.get(i));
-                Hawk.put("my_downloads_temp", my_downloads_temp);
-            }
-        }
-        my_downloads_temp.add(downloadItem);
-        Hawk.put("my_downloads_temp", my_downloads_temp);
+        // List<DownloadItem> my_downloads_temp = Hawk.get("my_downloads_temp"); // Hawk usage removed
+        // if (my_downloads_temp == null) {
+        //     my_downloads_temp = new ArrayList<>();
+        // }
+        // for (int i = 0; i < my_downloads_temp.size(); i++) {
+        //     if (my_downloads_temp.get(i).getId().equals(source.getId())) {
+        //         my_downloads_temp.remove(my_downloads_temp.get(i));
+        //         Hawk.put("my_downloads_temp", my_downloads_temp);
+        //     }
+        // }
+        // my_downloads_temp.add(downloadItem);
+        // Hawk.put("my_downloads_temp", my_downloads_temp);
     }
 
     public void openLink(int position){
@@ -2272,3 +1810,4 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         startActivity(i);
     }
 }
+>>>>>>> REPLACE

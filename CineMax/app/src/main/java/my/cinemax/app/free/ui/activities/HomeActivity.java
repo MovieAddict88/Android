@@ -130,32 +130,32 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         initBuy();
     }
 
-    BillingSubs billingSubs;
-    public void initBuy(){
-        List<String> listSkuStoreSubs = new ArrayList<>();
-        listSkuStoreSubs.add(Global.SUBSCRIPTION_ID);
-        billingSubs = new BillingSubs(this, listSkuStoreSubs, new CallBackBilling() {
-            @Override
-            public void onPurchase() {
-                PrefManager prefManager= new PrefManager(getApplicationContext());
-                prefManager.setString("SUBSCRIBED","TRUE");
-                Toasty.success(HomeActivity.this, "you have successfully subscribed ", Toast.LENGTH_SHORT).show();
-            }
+    // BillingSubs billingSubs; // Subscription removed
+    // public void initBuy(){ // Subscription removed
+    //     List<String> listSkuStoreSubs = new ArrayList<>();
+    //     listSkuStoreSubs.add(Global.SUBSCRIPTION_ID);
+    //     billingSubs = new BillingSubs(this, listSkuStoreSubs, new CallBackBilling() {
+    //         @Override
+    //         public void onPurchase() {
+    //             PrefManager prefManager= new PrefManager(getApplicationContext());
+    //             prefManager.setString("SUBSCRIBED","TRUE");
+    //             Toasty.success(HomeActivity.this, "you have successfully subscribed ", Toast.LENGTH_SHORT).show();
+    //         }
+    //
+    //         @Override
+    //         public void onNotPurchase() {
+    //             Toasty.warning(HomeActivity.this, "Operation has been cancelled  ", Toast.LENGTH_SHORT).show();
+    //         }
+    //
+    //         @Override
+    //         public void onNotLogin() {
+    //         }
+    //     });
+    // }
 
-            @Override
-            public void onNotPurchase() {
-                Toasty.warning(HomeActivity.this, "Operation has been cancelled  ", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onNotLogin() {
-            }
-        });
-    }
-
-    public void subscribe(){
-        billingSubs.purchase(Global.SUBSCRIPTION_ID);
-    }
+    // public void subscribe(){ // Subscription removed
+    //     billingSubs.purchase(Global.SUBSCRIPTION_ID);
+    // }
 
 
 
@@ -274,133 +274,77 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         if (id == R.id.nav_home) {
             viewPager.setCurrentItem(0);
-        }else if(id == R.id.login){
-            Intent intent= new Intent(HomeActivity.this, LoginActivity.class);
-            startActivity(intent);
-            overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-
-            FromLogin=true;
-
-        }else if (id == R.id.nav_exit) {
+        } else if (id == R.id.nav_exit) {
             final PrefManager prf = new PrefManager(getApplicationContext());
-            if (prf.getString("NOT_RATE_APP").equals("TRUE")) {
+            // Assuming NOT_RATE_APP is a preference that might be kept for app rating prompts
+            if (prf.getBoolean("NOT_RATE_APP", false)) { // Use getBoolean with a default
                 super.onBackPressed();
             } else {
                 rateDialog(true);
             }
-        }
-        else if (id == R.id.my_password) {
-            PrefManager prf= new PrefManager(getApplicationContext());
-            if (prf.getString("LOGGED").toString().equals("TRUE")){
-                Intent intent  =  new Intent(getApplicationContext(), PasswordActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-            }else{
-                Intent intent= new Intent(HomeActivity.this, LoginActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                FromLogin=true;
-            }
-        }else if (id == R.id.nav_settings) {
+        } else if (id == R.id.nav_settings) {
             Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.enter, R.anim.exit);
-        }else if (id==R.id.my_profile){
-            PrefManager prf= new PrefManager(getApplicationContext());
-            if (prf.getString("LOGGED").toString().equals("TRUE")){
-                Intent intent  =  new Intent(getApplicationContext(), EditActivity.class);
-                intent.putExtra("id", Integer.parseInt(prf.getString("ID_USER")));
-                intent.putExtra("image",prf.getString("IMAGE_USER").toString());
-                intent.putExtra("name",prf.getString("NAME_USER").toString());
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-
-            }else{
-                Intent intent= new Intent(HomeActivity.this, LoginActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                FromLogin=true;
-            }
-        }else if (id==R.id.logout){
-            logout();
-        }else if (id ==  R.id.my_list){
+        } else if (id ==  R.id.my_list){ // "My List" will be a local feature
             Intent intent= new Intent(HomeActivity.this, MyListActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-        }
-        else if (id==R.id.nav_share){
-			//startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(MyApi.API_URL)));
-            //final String appPackageName=getApplication().getPackageName();
-            String shareBody = MyApi.API_URL;
+        } else if (id==R.id.nav_share){
+            String shareBody = MyApi.API_URL; // Consider changing this if API_URL is tied to a specific service
             Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
             sharingIntent.setType("text/plain");
             sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
             sharingIntent.putExtra(Intent.EXTRA_SUBJECT,  getString(R.string.app_name));
             startActivity(Intent.createChooser(sharingIntent, getResources().getString(R.string.app_name)));
-        }else if (id == R.id.nav_rate) {
+        } else if (id == R.id.nav_rate) {
             rateDialog(false);
-        }else if (id == R.id.nav_help){
+        } else if (id == R.id.nav_help){
             Intent intent= new Intent(HomeActivity.this, SupportActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-
         } else if (id == R.id.nav_policy  ){
             Intent intent = new Intent(getApplicationContext(), PolicyActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.enter, R.anim.exit);
-        }else if (id == R.id.buy_now){
-            showDialog();
         }
+        // Removed: login, my_password, my_profile, logout, buy_now
+
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
-    public      void logout(){
-        PrefManager prf= new PrefManager(getApplicationContext());
-        prf.remove("ID_USER");
-        prf.remove("SALT_USER");
-        prf.remove("TOKEN_USER");
-        prf.remove("NAME_USER");
-        prf.remove("TYPE_USER");
-        prf.remove("USERN_USER");
-        prf.remove("IMAGE_USER");
-        prf.remove("LOGGED");
-        prf.remove("NEW_SUBSCRIBE_ENABLED");
-        if (prf.getString("LOGGED").toString().equals("TRUE")){
-            text_view_name_nave_header.setText(prf.getString("NAME_USER").toString());
-            Picasso.with(getApplicationContext()).load(prf.getString("IMAGE_USER").toString()).placeholder(R.drawable.placeholder_profile).error(R.drawable.placeholder_profile).resize(200,200).centerCrop().into(circle_image_view_profile_nav_header);
-            if (prf.getString("TYPE_USER").toString().equals("google")){
-            }else {
-            }
-        }else{
-            Menu nav_Menu = navigationView.getMenu();
-            nav_Menu.findItem(R.id.my_profile).setVisible(false);
-            nav_Menu.findItem(R.id.my_password).setVisible(false);
-            nav_Menu.findItem(R.id.logout).setVisible(false);
-            nav_Menu.findItem(R.id.my_list).setVisible(false);
-            nav_Menu.findItem(R.id.login).setVisible(true);
-            text_view_name_nave_header.setText(getResources().getString(R.string.please_login));
-            Picasso.with(getApplicationContext()).load(R.drawable.placeholder_profile).placeholder(R.drawable.placeholder_profile).error(R.drawable.placeholder_profile).resize(200,200).centerCrop().into(circle_image_view_profile_nav_header);
-        }
+    // public void logout(){ // This method is no longer needed as logout functionality is removed
+    //     PrefManager prf= new PrefManager(getApplicationContext());
+    //     prf.remove("ID_USER");
+    //     prf.remove("SALT_USER");
+    //     prf.remove("TOKEN_USER");
+    //     prf.remove("NAME_USER");
+    //     prf.remove("TYPE_USER");
+    //     prf.remove("USERN_USER");
+    //     prf.remove("IMAGE_USER");
+    //     prf.remove("LOGGED");
+    //     prf.remove("NEW_SUBSCRIBE_ENABLED");
+    //
+    //     // Update header to reflect logged-out state (now default anonymous state)
+    //     Menu nav_Menu = navigationView.getMenu();
+    //     nav_Menu.findItem(R.id.my_profile).setVisible(false);
+    //     nav_Menu.findItem(R.id.my_password).setVisible(false);
+    //     nav_Menu.findItem(R.id.logout).setVisible(false);
+    //     // nav_Menu.findItem(R.id.my_list).setVisible(false); // My List will be local
+    //     nav_Menu.findItem(R.id.login).setVisible(false); // Login item also removed
+    //
+    //     text_view_name_nave_header.setText(getResources().getString(R.string.app_name)); // Or a generic name
+    //     Picasso.with(getApplicationContext()).load(R.drawable.placeholder_profile).placeholder(R.drawable.placeholder_profile).error(R.drawable.placeholder_profile).resize(200,200).centerCrop().into(circle_image_view_profile_nav_header);
+    //     image_view_profile_nav_header_bg.setVisibility(View.GONE);
+    //
+    //     // Removed APP_LOGIN_REQUIRED check as login is removed
+    //     // Removed checkSUBSCRIBED and buy_now visibility toggle as subscriptions are removed
+    //
+    //     Toasty.info(getApplicationContext(),getString(R.string.app_is_now_free),Toast.LENGTH_LONG).show(); // Example message
+    // }
 
-        if (prf.getString("APP_LOGIN_REQUIRED").toString().equals("TRUE")) {
-            Intent intent= new Intent(HomeActivity.this, LoginActivity.class);
-            startActivity(intent);
-            overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-            finish();
-        }
-        Menu nav_Menu = navigationView.getMenu();
-
-        if (checkSUBSCRIBED()){
-            nav_Menu.findItem(R.id.buy_now).setVisible(false);
-        }else{
-            nav_Menu.findItem(R.id.buy_now).setVisible(true);
-
-        }
-        image_view_profile_nav_header_bg.setVisibility(View.GONE);
-        Toasty.info(getApplicationContext(),getString(R.string.message_logout),Toast.LENGTH_LONG).show();
-    }
     class ViewPagerAdapter extends FragmentPagerAdapter {
 
         public ViewPagerAdapter(FragmentManager manager) {
@@ -686,57 +630,37 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     protected void onResume() {
         super.onResume();
 
-
-        PrefManager prf= new PrefManager(getApplicationContext());
+        // PrefManager prf= new PrefManager(getApplicationContext()); // Keep for other prefs if needed
         Menu nav_Menu = navigationView.getMenu();
 
+        // Remove visibility toggles based on login state as these items are now removed or always visible
+        nav_Menu.findItem(R.id.login).setVisible(false);
+        nav_Menu.findItem(R.id.my_profile).setVisible(false);
+        nav_Menu.findItem(R.id.my_password).setVisible(false);
+        nav_Menu.findItem(R.id.logout).setVisible(false);
+        nav_Menu.findItem(R.id.buy_now).setVisible(false); // Assuming subscriptions are removed
 
-        if(checkSUBSCRIBED()){
-            nav_Menu.findItem(R.id.buy_now).setVisible(false);
-        }else{
-            nav_Menu.findItem(R.id.buy_now).setVisible(true);
-        }
-        if (prf.getString("LOGGED").toString().equals("TRUE")){
-            nav_Menu.findItem(R.id.my_profile).setVisible(true);
-            if (prf.getString("TYPE_USER").toString().equals("email")){
-                nav_Menu.findItem(R.id.my_password).setVisible(true);
-            }
-            nav_Menu.findItem(R.id.logout).setVisible(true);
-            nav_Menu.findItem(R.id.my_list).setVisible(true);
-            nav_Menu.findItem(R.id.login).setVisible(false);
-            text_view_name_nave_header.setText(prf.getString("NAME_USER").toString());
-            Picasso.with(getApplicationContext()).load(prf.getString("IMAGE_USER").toString()).placeholder(R.drawable.placeholder_profile).error(R.drawable.placeholder_profile).resize(200,200).centerCrop().into(circle_image_view_profile_nav_header);
+        // "My List" is now a local feature, so it's always visible.
+        nav_Menu.findItem(R.id.my_list).setVisible(true);
 
-            final com.squareup.picasso.Target target = new com.squareup.picasso.Target() {
-                @Override
-                public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                    BlurImage.with(getApplicationContext()).load(bitmap).intensity(25).Async(true).into(image_view_profile_nav_header_bg);
-                }
-                @Override
-                public void onBitmapFailed(Drawable errorDrawable) { }
-                @Override
-                public void onPrepareLoad(Drawable placeHolderDrawable) { }
-            };
-            Picasso.with(getApplicationContext()).load(prf.getString("IMAGE_USER").toString()).into(target);
-            image_view_profile_nav_header_bg.setTag(target);
-            image_view_profile_nav_header_bg.setVisibility(View.VISIBLE);
 
-        }else{
-            nav_Menu.findItem(R.id.my_profile).setVisible(false);
-            nav_Menu.findItem(R.id.my_password).setVisible(false);
-            nav_Menu.findItem(R.id.logout).setVisible(false);
-            nav_Menu.findItem(R.id.my_list).setVisible(false);
-            nav_Menu.findItem(R.id.login).setVisible(true);
-            image_view_profile_nav_header_bg.setVisibility(View.GONE);
+        // Update nav header to a generic state
+        text_view_name_nave_header.setText(getResources().getString(R.string.app_name)); // Or "Welcome Guest", or remove text
+        Picasso.with(getApplicationContext())
+                .load(R.drawable.placeholder_profile) // Generic placeholder
+                .placeholder(R.drawable.placeholder_profile)
+                .error(R.drawable.placeholder_profile)
+                .resize(200,200)
+                .centerCrop()
+                .into(circle_image_view_profile_nav_header);
+        image_view_profile_nav_header_bg.setVisibility(View.GONE); // Or set a generic background
 
-            text_view_name_nave_header.setText(getResources().getString(R.string.please_login));
-            Picasso.with(getApplicationContext()).load(R.drawable.placeholder_profile).placeholder(R.drawable.placeholder_profile).error(R.drawable.placeholder_profile).resize(200,200).centerCrop().into(circle_image_view_profile_nav_header);
-        }
-        if (FromLogin){
-            FromLogin = false;
-        }
-
+        // FromLogin variable is no longer relevant
+        // if (FromLogin){
+        //     FromLogin = false;
+        // }
     }
+
     public void goToTV() {
         viewPager.setCurrentItem(3);
     }

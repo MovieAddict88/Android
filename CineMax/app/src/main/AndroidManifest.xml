@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
-    <uses-permission android:name="com.android.vending.BILLING" />
+    <!-- <uses-permission android:name="com.android.vending.BILLING" /> -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
@@ -24,22 +24,22 @@
         android:theme="@style/Theme.AppCompat"
         android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity
+        <!-- <activity
             android:name="my.cinemax.app.free.ui.activities.StripeActivity"
-            android:theme="@style/Theme.ProfileDialog" />
+            android:theme="@style/Theme.ProfileDialog" /> -->
 
-        <activity
+        <!-- <activity
             android:name="my.cinemax.app.free.ui.activities.FinishActivity"
-            android:theme="@style/Theme.ProfileDialog" />
-        <activity
+            android:theme="@style/Theme.ProfileDialog" /> -->
+        <!-- <activity
             android:name="my.cinemax.app.free.ui.activities.PlansActivity"
-            android:theme="@style/Theme.ProfileDialog" />
-        <activity
+            android:theme="@style/Theme.ProfileDialog" /> -->
+        <!-- <activity
             android:name="my.cinemax.app.free.ui.activities.CashActivity"
-            android:theme="@style/Theme.ProfileDialog" />
-        <activity
+            android:theme="@style/Theme.ProfileDialog" /> -->
+        <!-- <activity
             android:name="my.cinemax.app.free.ui.activities.PasswordActivity"
-            android:theme="@style/Theme.ProfileDialog" />
+            android:theme="@style/Theme.ProfileDialog" /> -->
 
         <meta-data
             android:name="com.google.android.gms.ads.AD_MANAGER_APP"
@@ -137,9 +137,9 @@
         <activity
             android:name="my.cinemax.app.free.ui.activities.ActorActivity"
             android:theme="@style/AppThemeActionDestils" />
-        <activity
+        <!-- <activity
             android:name="my.cinemax.app.free.ui.activities.LoginActivity"
-            android:theme="@style/AppThemeActionDestilsNew" />
+            android:theme="@style/AppThemeActionDestilsNew" /> -->
         <activity
             android:name="my.cinemax.app.free.ui.activities.LoadActivity"
             android:theme="@style/AppThemeActionDestils">
@@ -169,9 +169,9 @@
         <activity
             android:name="my.cinemax.app.free.ui.activities.SerieActivity"
             android:theme="@style/AppThemeActionDestils" />
-        <activity
+        <!-- <activity
             android:name="my.cinemax.app.free.ui.activities.EditActivity"
-            android:theme="@style/Theme.ProfileDialog" />
+            android:theme="@style/Theme.ProfileDialog" /> -->
         <activity
             android:name="my.cinemax.app.free.ui.activities.ChannelActivity"
             android:theme="@style/AppThemeActionDestils" />
@@ -203,9 +203,9 @@
             android:name="my.cinemax.app.free.ui.activities.EmbedActivity"
             android:screenOrientation="landscape"
             android:theme="@style/AppTheme" />
-        <activity
+        <!-- <activity
             android:name="my.cinemax.app.free.ui.activities.RefundActivity"
-            android:theme="@style/AppThemeNoAction" />
+            android:theme="@style/AppThemeNoAction" /> -->
     </application>
 
 </manifest>

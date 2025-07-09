@@ -41,9 +41,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.congle7997.google_iap.BillingSubs;
-import com.congle7997.google_iap.CallBackBilling;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -65,7 +62,7 @@ import com.google.android.gms.cast.framework.media.RemoteMediaClient;
 import com.google.android.gms.common.images.WebImage;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.jackandphantom.blurimage.BlurImage;
-import com.orhanobut.hawk.Hawk;
+
 import my.cinemax.app.free.Provider.PrefManager;
 import my.cinemax.app.free.R;
 import my.cinemax.app.free.api.apiClient;
@@ -74,7 +71,6 @@ import my.cinemax.app.free.config.Global;
 import my.cinemax.app.free.entity.Actor;
 import my.cinemax.app.free.entity.ApiResponse;
 import my.cinemax.app.free.entity.Comment;
-import my.cinemax.app.free.entity.DownloadItem;
 import my.cinemax.app.free.entity.Language;
 import my.cinemax.app.free.entity.Poster;
 import my.cinemax.app.free.entity.Source;
@@ -181,20 +177,8 @@ public class MovieActivity extends AppCompatActivity {
     private TextView text_view_activity_movie_imdb_rating;
 
     private RewardedAd mRewardedVideoAd;
-
-
-    private  Boolean DialogOpened = false;
-    private  Boolean fromLoad = false;
-    private  int operationAfterAds = 0;
-    private  int current_position_play=-1 ;
-    private  int current_position_download=-1 ;
-
-
-    private Dialog dialog;
-    private boolean autoDisplay = false;
+    private boolean autoDisplay = false; // For rewarded ads, if kept for other purposes
     private PrefManager prefManager;
-
-    private String payment_methode_id = "null";
     private ProgressBar progress_bar_activity_movie_my_list;
 
     private class SessionManagerListenerImpl implements SessionManagerListener {
@@ -267,92 +251,28 @@ public class MovieActivity extends AppCompatActivity {
         setPlayableList();
         showAdsBanner();
         loadRewardedVideoAd();
-
-
-        initBuy();
     }
 
-    BillingSubs billingSubs;
-    public void initBuy(){
-        List<String> listSkuStoreSubs = new ArrayList<>();
-        listSkuStoreSubs.add(Global.SUBSCRIPTION_ID);
-        billingSubs = new BillingSubs(this, listSkuStoreSubs, new CallBackBilling() {
-            @Override
-            public void onPurchase() {
-                PrefManager prefManager= new PrefManager(getApplicationContext());
-                prefManager.setString("SUBSCRIBED","TRUE");
-                Toasty.success(MovieActivity.this, "you have successfully subscribed ", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onNotPurchase() {
-                Toasty.warning(MovieActivity.this, "Operation has been cancelled  ", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onNotLogin() {
-            }
-        });
-    }
-
-    public void subscribe(){
-        billingSubs.purchase(Global.SUBSCRIPTION_ID);
-    }
     public void loadRewardedVideoAd() {
-        PrefManager   prefManager= new PrefManager(getApplicationContext());
-
-        mRewardedVideoAd.load(getApplicationContext(), prefManager.getString("ADMIN_REWARDED_ADMOB_ID"),
-                new AdRequest.Builder().build(), new RewardedAdLoadCallback() {
-                    @Override
-                    public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
-                        super.onAdLoaded(rewardedAd);
-
-                        if (autoDisplay){
-                            dialog.dismiss();
-                            autoDisplay = false;
+        if (mRewardedVideoAd == null && prefManager != null && !prefManager.getString("ADMIN_REWARDED_ADMOB_ID","").isEmpty()) {
+            AdRequest adRequest = new AdRequest.Builder().build();
+            RewardedAd.load(getApplicationContext(), prefManager.getString("ADMIN_REWARDED_ADMOB_ID"),
+                    adRequest, new RewardedAdLoadCallback() {
+                        @Override
+                        public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
                             mRewardedVideoAd = rewardedAd;
-                            mRewardedVideoAd.show(MovieActivity.this, rewardItem -> {
-                                dialog.dismiss();
-                                Toasty.success(getApplicationContext(),getString(R.string.use_content_for_free)).show();
-                                Log.d("Rewarded","onRewarded ");
-                                switch (operationAfterAds){
-                                    case  100 :
-                                        poster.setDownloadas("1");
-                                        break;
-                                    case  200 :
-                                        poster.setPlayas("1");
-                                        break;
-                                    case 300 :
-                                        if (current_position_play != -1 ){
-                                            playSources.get(current_position_play).setPremium("1");
-                                            showSourcesPlayDialog();
-                                        }
-                                        break;
-                                    case 400:
-                                        if (current_position_download != -1 ){
-                                            downloadableList.get(current_position_download).setPremium("1");
-                                            showSourcesDownloadDialog();
-                                        }
-                                        break;
-                                }
-                            });
+                            Log.d(TAG, "Rewarded Ad Loaded.");
+                            // Rewarded ad display logic if needed for other purposes than unlocking can go here
                         }
-                    }
 
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        super.onAdFailedToLoad(loadAdError);
-                        mRewardedVideoAd = null;
-
-                    }
-                });
+                        @Override
+                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                            mRewardedVideoAd = null;
+                            Log.d(TAG, "Rewarded Ad failed to load: " + loadAdError.getMessage());
+                        }
+                    });
+        }
     }
-
-
-
-
-
-
 
     private void setPlayableList() {
         for (int i = 0; i < poster.getSources().size(); i++) {
@@ -360,8 +280,8 @@ public class MovieActivity extends AppCompatActivity {
                 playSources.add(poster.getSources().get(i));
             }
         }
-
     }
+
     private void setDownloadableList() {
         for (int i = 0; i < poster.getSources().size(); i++) {
             if (poster.getSources().get(i).getKind().equals("both") || poster.getSources().get(i).getKind().equals("download")){
@@ -409,6 +329,7 @@ public class MovieActivity extends AppCompatActivity {
             }
         });
     }
+
     private void getPosterCastings() {
         Retrofit retrofit = apiClient.getClient();
         apiRest service = retrofit.create(apiRest.class);
@@ -437,6 +358,7 @@ public class MovieActivity extends AppCompatActivity {
         poster = getIntent().getParcelableExtra("poster");
         from = getIntent().getStringExtra("from");
     }
+
     private void setMovie() {
         Picasso.with(this).load((poster.getCover()!=null ? poster.getCover() : poster.getImage())).into(image_view_activity_movie_cover);
         final com.squareup.picasso.Target target = new com.squareup.picasso.Target() {
@@ -496,7 +418,7 @@ public class MovieActivity extends AppCompatActivity {
         if (poster.getTrailer()!=null){
             linear_layout_movie_activity_trailer.setVisibility(View.VISIBLE);
         }
-        if (poster.getComment()){
+        if (poster.getComment()){ // This might need to be re-evaluated if anonymous comments are not desired
             floating_action_button_activity_movie_comment.setVisibility(View.VISIBLE);
         }else{
             floating_action_button_activity_movie_comment.setVisibility(View.GONE);
@@ -523,18 +445,7 @@ public class MovieActivity extends AppCompatActivity {
         floating_action_button_activity_movie_play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (checkSUBSCRIBED()){
-                    showSourcesPlayDialog();
-                }else{
-                    if (poster.getPlayas().equals("2")){
-                        showDialog(false);
-                    }else if(poster.getPlayas().equals("3") ){
-                        operationAfterAds = 200;
-                        showDialog(true);
-                    }else{
-                        showSourcesPlayDialog();
-                    }
-                }
+                showSourcesPlayDialog(); // Directly show sources
             }
         });
         linear_layout_movie_activity_rate.setOnClickListener(new View.OnClickListener() {
@@ -544,18 +455,7 @@ public class MovieActivity extends AppCompatActivity {
             }
         });
         linear_layout_movie_activity_download.setOnClickListener(v->{
-            if (checkSUBSCRIBED()){
-                showSourcesDownloadDialog();
-            }else{
-                if (poster.getDownloadas().equals("2")){
-                    showDialog(false);
-                }else if(poster.getDownloadas().equals("3") ){
-                    showDialog(true);
-                    operationAfterAds = 100;
-                }else{
-                    showSourcesDownloadDialog();
-                }
-            }
+            showSourcesDownloadDialog(); // Directly show download sources
         });
         floating_action_button_activity_movie_comment.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -564,13 +464,7 @@ public class MovieActivity extends AppCompatActivity {
             }
         });
     }
-    public boolean checkSUBSCRIBED(){
-        PrefManager prefManager= new PrefManager(getApplicationContext());
-        if (!prefManager.getString("SUBSCRIBED").equals("TRUE") && !prefManager.getString("NEW_SUBSCRIBE_ENABLED").equals("TRUE")) {
-            return false;
-        }
-        return true;
-    }
+
     public void playSource(int position){
         addView();
 
@@ -659,43 +553,38 @@ public class MovieActivity extends AppCompatActivity {
         buttun_send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PrefManager prf = new PrefManager(getApplicationContext());
-                if (prf.getString("LOGGED").toString().equals("TRUE")) {
-                    Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                    String   key_user=  prf.getString("TOKEN_USER");
-                    Retrofit retrofit = apiClient.getClient();
-                    apiRest service = retrofit.create(apiRest.class);
-                    Call<ApiResponse> call = service.addPosterRate(id_user+"",key_user, poster.getId(), AppCompatRatingBar_dialog_rating_app.getRating());
-                    call.enqueue(new retrofit2.Callback<ApiResponse>() {
-                        @Override
-                        public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                            if (response.isSuccessful()) {
-                                if (response.body().getCode() == 200) {
-                                    Toasty.success(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                    if (response.body().getValues().size()>0){
-                                        if (response.body().getValues().get(0).getName().equals("rate") ){
-                                            linear_layout_activity_movie_rating.setVisibility(View.VISIBLE);
-                                            rating_bar_activity_movie_rating.setRating(Float.parseFloat(response.body().getValues().get(0).getValue()));
-                                        }
+                // PrefManager prf = new PrefManager(getApplicationContext()); // Already have instance
+                // User login is removed, so rating will be anonymous or disabled.
+                // For now, assume anonymous rating (id_user=0, key_user="").
+                // If backend doesn't support anonymous rating, this call might fail or do nothing.
+                Integer id_user = 0;
+                String key_user = "";
+                Retrofit retrofit = apiClient.getClient();
+                apiRest service = retrofit.create(apiRest.class);
+                Call<ApiResponse> call = service.addPosterRate(id_user+"",key_user, poster.getId(), AppCompatRatingBar_dialog_rating_app.getRating());
+                call.enqueue(new retrofit2.Callback<ApiResponse>() {
+                    @Override
+                    public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                        if (response.isSuccessful()) {
+                            if (response.body().getCode() == 200) {
+                                Toasty.success(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                                if (response.body().getValues().size()>0){
+                                    if (response.body().getValues().get(0).getName().equals("rate") ){
+                                        linear_layout_activity_movie_rating.setVisibility(View.VISIBLE);
+                                        rating_bar_activity_movie_rating.setRating(Float.parseFloat(response.body().getValues().get(0).getValue()));
                                     }
-                                } else {
-                                    Toasty.error(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                                 }
+                            } else {
+                                Toasty.error(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                             }
-                            rateDialog.dismiss();
                         }
-                        @Override
-                        public void onFailure(Call<ApiResponse> call, Throwable t) {
-                            rateDialog.dismiss();
-                        }
-                    });
-                } else {
-                    rateDialog.dismiss();
-                    Intent intent = new Intent(MovieActivity.this,LoginActivity.class);
-                    startActivity(intent);
-                    overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-
-                }
+                        rateDialog.dismiss();
+                    }
+                    @Override
+                    public void onFailure(Call<ApiResponse> call, Throwable t) {
+                        rateDialog.dismiss();
+                    }
+                });
             }
         });
         rateDialog.setOnKeyListener(new Dialog.OnKeyListener() {
@@ -713,7 +602,7 @@ public class MovieActivity extends AppCompatActivity {
     }
     public void showCommentsDialog(){
 
-        Dialog dialog= new Dialog(this,
+        Dialog dialog= new Dialog(this, // Renamed to avoid conflict with class field `this.dialog` if it was for subscription
                 R.style.Theme_Dialog);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCancelable(true);
@@ -786,10 +675,13 @@ public class MovieActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (edit_text_comment_dialog_add_comment.getText().length()>0){
-                    PrefManager prf= new PrefManager(MovieActivity.this.getApplicationContext());
-                    if (prf.getString("LOGGED").toString().equals("TRUE")){
-                        Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                        String   key_user=  prf.getString("TOKEN_USER");
+                    // PrefManager prf= new PrefManager(MovieActivity.this.getApplicationContext()); // Already have instance
+                    // if (prf.getString("LOGGED").toString().equals("TRUE")){ // Login check removed
+                        // Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
+                        // String   key_user=  prf.getString("TOKEN_USER");
+                        Integer id_user = 0; // Anonymous user
+                        String key_user = ""; // Anonymous key
+
                         byte[] data = new byte[0];
                         String comment_final ="";
                         try {
@@ -801,10 +693,10 @@ public class MovieActivity extends AppCompatActivity {
                         }
                         progress_bar_comment_dialog_add_comment.setVisibility(View.VISIBLE);
                         image_view_comment_dialog_add_comment.setVisibility(View.GONE);
-                        Retrofit retrofit = apiClient.getClient();
-                        apiRest service = retrofit.create(apiRest.class);
-                        Call<ApiResponse> call = service.addPosterComment(id_user+"",key_user,poster.getId(),comment_final);
-                        call.enqueue(new Callback<ApiResponse>() {
+                        Retrofit retrofit_comment = apiClient.getClient(); // new instance to avoid conflict
+                        apiRest service_comment = retrofit_comment.create(apiRest.class);
+                        Call<ApiResponse> call_comment = service_comment.addPosterComment(id_user+"",key_user,poster.getId(),comment_final);
+                        call_comment.enqueue(new Callback<ApiResponse>() {
                             @Override
                             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
                                 if (response.isSuccessful()){
@@ -813,30 +705,30 @@ public class MovieActivity extends AppCompatActivity {
                                         image_view_comment_dialog_empty.setVisibility(View.GONE);
                                         Toasty.success(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                                         edit_text_comment_dialog_add_comment.setText("");
-                                        String id="";
-                                        String content="";
-                                        String user="";
-                                        String image="";
+                                        String id_resp="";
+                                        String content_resp="";
+                                        String user_resp="";
+                                        String image_resp="";
 
                                         for (int i=0;i<response.body().getValues().size();i++){
                                             if (response.body().getValues().get(i).getName().equals("id")){
-                                                id=response.body().getValues().get(i).getValue();
+                                                id_resp=response.body().getValues().get(i).getValue();
                                             }
                                             if (response.body().getValues().get(i).getName().equals("content")){
-                                                content=response.body().getValues().get(i).getValue();
+                                                content_resp=response.body().getValues().get(i).getValue();
                                             }
                                             if (response.body().getValues().get(i).getName().equals("user")){
-                                                user=response.body().getValues().get(i).getValue();
+                                                user_resp=response.body().getValues().get(i).getValue();
                                             }
                                             if (response.body().getValues().get(i).getName().equals("image")){
-                                                image=response.body().getValues().get(i).getValue();
+                                                image_resp=response.body().getValues().get(i).getValue();
                                             }
                                         }
                                         Comment comment= new Comment();
-                                        comment.setId(Integer.parseInt(id));
-                                        comment.setUser(user);
-                                        comment.setContent(content);
-                                        comment.setImage(image);
+                                        comment.setId(Integer.parseInt(id_resp));
+                                        comment.setUser(user_resp); // Will be anonymous or generic
+                                        comment.setContent(content_resp);
+                                        comment.setImage(image_resp); // Will be placeholder or generic
                                         comment.setEnabled(true);
                                         comment.setCreated(getResources().getString(R.string.now_time));
                                         commentList.add(comment);
@@ -859,11 +751,11 @@ public class MovieActivity extends AppCompatActivity {
                                 image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
                             }
                         });
-                    }else{
-                        Intent intent = new Intent(MovieActivity.this,LoginActivity.class);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                    }
+                    // }else{ // Login no longer required
+                    //     Intent intent = new Intent(MovieActivity.this,LoginActivity.class);
+                    //     startActivity(intent);
+                    //     overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+                    // }
                 }
             }
         });
@@ -886,29 +778,11 @@ public class MovieActivity extends AppCompatActivity {
             return;
         }
         if (downloadableList.size()==1){
-            if (checkSUBSCRIBED()) {
-                if (!downloadableList.get(0).getExternal()) {
-                    DownloadSource(downloadableList.get(0));
-                } else {
-                    openDownloadLink(0);
-                }
-            }else {
-
-                if (downloadableList.get(0).getPremium().equals("2")) {
-                    showDialog(false);
-                } else if (downloadableList.get(0).getPremium().equals("3")) {
-                    operationAfterAds = 400;
-                    current_position_download = 0;
-                    showDialog(true);
-                } else {
-                    if (!downloadableList.get(0).getExternal()) {
-                        DownloadSource(downloadableList.get(0));
-                    } else {
-                        openDownloadLink(0);
-                    }
-                }
+            if (!downloadableList.get(0).getExternal()) {
+                DownloadSource(downloadableList.get(0));
+            } else {
+                openDownloadLink(0);
             }
-
             return;
         }
 
@@ -959,26 +833,10 @@ public class MovieActivity extends AppCompatActivity {
             return;
         }
         if (playSources.size()==1) {
-            if (checkSUBSCRIBED()) {
-                if (playSources.get(0).getExternal()) {
-                    openLink(0);
-                } else {
-                    playSource(0);
-                }
+            if (playSources.get(0).getExternal()) {
+                openLink(0);
             } else {
-                if (playSources.get(0).getPremium().equals("2")) {
-                    showDialog(false);
-                } else if (playSources.get(0).getPremium().equals("3")) {
-                    operationAfterAds = 300;
-                    current_position_play = 0;
-                    showDialog(true);
-                } else {
-                    if (playSources.get(0).getExternal()) {
-                        openLink(0);
-                    } else {
-                        playSource(0);
-                    }
-                }
+                playSource(0);
             }
             return;
         }
@@ -1258,8 +1116,8 @@ public class MovieActivity extends AppCompatActivity {
             }
             holder.image_view_item_source_premium.setVisibility(View.GONE);
             if (playSources.get(position).getPremium() != null) {
-                if (!playSources.get(position).getPremium().equals("1")){
-                    holder.image_view_item_source_premium.setVisibility(View.VISIBLE);
+                if (!playSources.get(position).getPremium().equals("1")){ // Content is free, so premium icon should not be shown
+                    // holder.image_view_item_source_premium.setVisibility(View.VISIBLE); // Removed
                 }
             }
 
@@ -1308,35 +1166,37 @@ public class MovieActivity extends AppCompatActivity {
                     break;
             }
             holder.image_view_item_source_type_play.setOnClickListener(v-> {
-                if (checkSUBSCRIBED()) {
-                    playSource(position);
-                }else{
-                    if (playSources.get(position).getPremium().equals("2")) {
-                        showDialog(false);
-                    } else if (playSources.get(position).getPremium().equals("3")) {
-                        operationAfterAds = 300;
-                        current_position_play = position;
-                        showDialog(true);
-                    } else {
-                        playSource(position);
-                    }
-                }
+                // if (checkSUBSCRIBED()) { // Subscription removed
+                //     playSource(position);
+                // }else{
+                //     if (playSources.get(position).getPremium().equals("2")) {
+                //         showDialog(false); // Subscription removed
+                //     } else if (playSources.get(position).getPremium().equals("3")) {
+                //         operationAfterAds = 300;
+                //         current_position_play = position;
+                //         showDialog(true); // Subscription removed
+                //     } else {
+                //         playSource(position);
+                //     }
+                // }
+                playSource(position); // Directly play
                 play_source_dialog.dismiss();
             });
             holder.image_view_item_source_type_link.setOnClickListener( v -> {
-                if (checkSUBSCRIBED()) {
-                    openLink(position);
-                }else{
-                    if (playSources.get(position).getPremium().equals("2")){
-                        showDialog(false);
-                    }else if(playSources.get(position).getPremium().equals("3") ){
-                        operationAfterAds = 300;
-                        current_position_play=  position;
-                        showDialog(true);
-                    }else{
-                        openLink(position);
-                    }
-                }
+                // if (checkSUBSCRIBED()) { // Subscription removed
+                //     openLink(position);
+                // }else {
+                //     if (playSources.get(position).getPremium().equals("2")){
+                //         showDialog(false); // Subscription removed
+                //     }else if(playSources.get(position).getPremium().equals("3") ){
+                //         operationAfterAds = 300;
+                //         current_position_play=  position;
+                //         showDialog(true); // Subscription removed
+                //     }else{
+                //         openLink(position);
+                //     }
+                // }
+                openLink(position); // Directly open link
                 play_source_dialog.dismiss();
 
             });
@@ -1395,8 +1255,8 @@ public class MovieActivity extends AppCompatActivity {
             }
             holder.image_view_item_source_premium.setVisibility(View.GONE);
             if (downloadableList.get(position).getPremium() != null) {
-                if (!downloadableList.get(position).getPremium().equals("1")){
-                    holder.image_view_item_source_premium.setVisibility(View.VISIBLE);
+                if (!downloadableList.get(position).getPremium().equals("1")){ // Content is free
+                    // holder.image_view_item_source_premium.setVisibility(View.VISIBLE); // Removed
                 }
             }
 
@@ -1439,36 +1299,38 @@ public class MovieActivity extends AppCompatActivity {
                     break;
             }
             holder.image_view_item_source_type_download.setOnClickListener(v-> {
-                if (checkSUBSCRIBED()){
-                    DownloadSource(downloadableList.get(position));
-                }else {
-                    if (downloadableList.get(position).getPremium().equals("2")) {
-                        showDialog(false);
-                    } else if (downloadableList.get(position).getPremium().equals("3")) {
-                        operationAfterAds = 400;
-                        current_position_download = position;
-                        showDialog(true);
-                    } else {
-                        DownloadSource(downloadableList.get(position));
-                    }
-                    download_source_dialog.dismiss();
-                }
+                // if (checkSUBSCRIBED()){ // Subscription removed
+                //     DownloadSource(downloadableList.get(position));
+                // }else {
+                //     if (downloadableList.get(position).getPremium().equals("2")) {
+                //         showDialog(false); // Subscription removed
+                //     } else if (downloadableList.get(position).getPremium().equals("3")) {
+                //         operationAfterAds = 400;
+                //         current_position_download=  position;
+                //         showDialog(true); // Subscription removed
+                //     } else {
+                //         DownloadSource(downloadableList.get(position));
+                //     }
+                // }
+                DownloadSource(downloadableList.get(position)); // Directly download
+                download_source_dialog.dismiss();
             });
             holder.image_view_item_source_type_link.setOnClickListener( v -> {
-                if (checkSUBSCRIBED()){
-                    openDownloadLink(position);
-                }else {
-                    if (downloadableList.get(position).getPremium().equals("2")) {
-                        showDialog(false);
-                    } else if (downloadableList.get(position).getPremium().equals("3")) {
-                        operationAfterAds = 400;
-                        current_position_download = position;
-                        showDialog(true);
-                    } else {
-                        openDownloadLink(position);
-                    }
-                    download_source_dialog.dismiss();
-                }
+                // if (checkSUBSCRIBED()){ // Subscription removed
+                //     openDownloadLink(position);
+                // }else {
+                //     if (downloadableList.get(position).getPremium().equals("2")) {
+                //         showDialog(false); // Subscription removed
+                //     } else if (downloadableList.get(position).getPremium().equals("3")) {
+                //         operationAfterAds = 400;
+                //         current_position_download = position;
+                //         showDialog(true); // Subscription removed
+                //     } else {
+                //         openDownloadLink(position);
+                //     }
+                // }
+                openDownloadLink(position); // Directly open link
+                download_source_dialog.dismiss();
 
             });
         }
@@ -1532,43 +1394,16 @@ public class MovieActivity extends AppCompatActivity {
         });
     }
     private void checkFavorite() {
+        // Uses local PrefManager to check if the poster ID is in the local "My List"
+        // final PrefManager prefManager = new PrefManager(this); // Already have global prefManager
+        progress_bar_activity_movie_my_list.setVisibility(View.GONE); // No loading needed for local check
+        image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
+        linear_layout_activity_movie_my_list.setClickable(true);
 
-        final PrefManager prefManager = new PrefManager(this);
-        if (prefManager.getString("LOGGED").toString().equals("TRUE")){
-            Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-            String   key_user=  prefManager.getString("TOKEN_USER");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            progress_bar_activity_movie_my_list.setVisibility(View.VISIBLE);
-            linear_layout_activity_movie_my_list.setClickable(false);
-
-            image_view_activity_movie_my_list.setVisibility(View.GONE);
-            Call<Integer> call = service.CheckMyList(poster.getId(),id_user,key_user,"poster");
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                    if (response.isSuccessful()){
-                        if (response.body() == 200){
-                            image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_close));
-                        }else{
-                            image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
-
-                        }
-                    }
-                    progress_bar_activity_movie_my_list.setVisibility(View.GONE);
-                    image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_movie_my_list.setClickable(true);
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-                    progress_bar_activity_movie_my_list.setVisibility(View.GONE);
-                    image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_movie_my_list.setClickable(true);
-
-
-                }
-            });
+        if (prefManager.isFavorite(poster.getId())) {
+            image_view_activity_movie_my_list.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close)); // Or ic_check_filled / ic_favorite_filled
+        } else {
+            image_view_activity_movie_my_list.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_check)); // Or ic_add / ic_favorite_border
         }
     }
 
@@ -1602,47 +1437,24 @@ public class MovieActivity extends AppCompatActivity {
         }
     }
     public void addMyList(){
-        final PrefManager prefManager = new PrefManager(this);
-        if (prefManager.getString("LOGGED").toString().equals("TRUE")){
-            Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-            String   key_user=  prefManager.getString("TOKEN_USER");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            progress_bar_activity_movie_my_list.setVisibility(View.VISIBLE);
-            image_view_activity_movie_my_list.setVisibility(View.GONE);
-            linear_layout_activity_movie_my_list.setClickable(false);
-            Call<Integer> call = service.AddMyList(poster.getId(),id_user,key_user,"poster");
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                    if (response.isSuccessful()){
-                        if (response.body() == 200){
-                            image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_close));
-                            Toasty.info(MovieActivity.this, "This movie has been added to your list", Toast.LENGTH_SHORT).show();
-                        }else{
-                            image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
-                            Toasty.warning(MovieActivity.this, "This movie has been removed from your list", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                    progress_bar_activity_movie_my_list.setVisibility(View.GONE);
-                    image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_movie_my_list.setClickable(true);
+        // final PrefManager prefManager = new PrefManager(this); // Already have global prefManager
+        // Login check is removed. Add/remove from local list.
 
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-                    progress_bar_activity_movie_my_list.setVisibility(View.GONE);
-                    image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_movie_my_list.setClickable(true);
+        progress_bar_activity_movie_my_list.setVisibility(View.GONE); // No progress bar for local operation (it's fast)
+        image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
 
-                }
-            });
-        }else{
-            Intent intent = new Intent(MovieActivity.this,LoginActivity.class);
-            startActivity(intent);
-            overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+        if (prefManager.isFavorite(poster.getId())) {
+            prefManager.removeFromMyList(poster.getId());
+            image_view_activity_movie_my_list.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_check)); // Or ic_add / ic_favorite_border
+            Toasty.warning(MovieActivity.this, "This movie has been removed from your list", Toast.LENGTH_SHORT).show();
+        } else {
+            prefManager.addToMyList(poster.getId());
+            image_view_activity_movie_my_list.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close)); // Or ic_check_filled / ic_favorite_filled
+            Toasty.info(MovieActivity.this, "This movie has been added to your list", Toast.LENGTH_SHORT).show();
         }
+        // No need to setClickable(true/false) as it's a quick operation.
     }
+
     public void addView(){
         final PrefManager prefManager = new PrefManager(this);
         if (!prefManager.getString(poster.getId()+"_view").equals("true")) {
@@ -1754,193 +1566,19 @@ public class MovieActivity extends AppCompatActivity {
             _e.printStackTrace();
         }
     }
-    public void showDialog(Boolean withAds){
-        this.dialog = new Dialog(this,
-                R.style.Theme_Dialog);
+    // public void showDialog(Boolean withAds){ // Subscription dialog removed
+    //     this.dialog = new Dialog(this,
+    //             R.style.Theme_Dialog);
+    // ... (entire method removed) ...
+    // }
+    // public boolean checkSUBSCRIBED(){ // Subscription removed
+    //     PrefManager prefManager= new PrefManager(getApplicationContext());
+    //     if (!prefManager.getString("SUBSCRIBED").equals("TRUE") && !prefManager.getString("NEW_SUBSCRIBE_ENABLED").equals("TRUE")) {
+    //         return false;
+    //     }
+    //     return true;
+    // }
 
-
-
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setCancelable(true);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        Window window = dialog.getWindow();
-        WindowManager.LayoutParams wlp = window.getAttributes();
-        getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
-        wlp.gravity = Gravity.BOTTOM;
-        wlp.flags &= ~WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-        window.setAttributes(wlp);
-        final   PrefManager prf= new PrefManager(getApplicationContext());
-        dialog.setCancelable(false);
-        dialog.setContentView(R.layout.dialog_subscribe);
-
-        RelativeLayout relative_layout_watch_ads=(RelativeLayout) dialog.findViewById(R.id.relative_layout_watch_ads);
-        TextView text_view_watch_ads=(TextView) dialog.findViewById(R.id.text_view_watch_ads);
-
-        TextView text_view_policy_2=(TextView) dialog.findViewById(R.id.text_view_policy_2);
-        TextView text_view_policy=(TextView) dialog.findViewById(R.id.text_view_policy);
-        SpannableString content = new SpannableString(getResources().getString(R.string.subscription_policy));
-        content.setSpan(new UnderlineSpan(), 0, content.length(), 0);
-        text_view_policy.setText(content);
-        text_view_policy_2.setText(content);
-
-
-        text_view_policy.setOnClickListener(view -> {
-            startActivity(new Intent(MovieActivity.this,RefundActivity.class));
-        });
-        text_view_policy_2.setOnClickListener(view -> {
-            startActivity(new Intent(MovieActivity.this,RefundActivity.class));
-        });
-
-
-        CardView card_view_gpay=(CardView) dialog.findViewById(R.id.card_view_gpay);
-        CardView card_view_paypal=(CardView) dialog.findViewById(R.id.card_view_paypal);
-        CardView card_view_cash=(CardView) dialog.findViewById(R.id.card_view_cash);
-        CardView card_view_credit_card=(CardView) dialog.findViewById(R.id.card_view_credit_card);
-        LinearLayout payment_methode=(LinearLayout) dialog.findViewById(R.id.payment_methode);
-        LinearLayout dialog_content=(LinearLayout) dialog.findViewById(R.id.dialog_content);
-        RelativeLayout relative_layout_subscibe_back=(RelativeLayout) dialog.findViewById(R.id.relative_layout_subscibe_back);
-
-        RelativeLayout relative_layout_select_method=(RelativeLayout) dialog.findViewById(R.id.relative_layout_select_method);
-
-        if (prf.getString("APP_STRIPE_ENABLED").toString().equals("FALSE")){
-            card_view_credit_card.setVisibility(View.GONE);
-        }
-        if (prf.getString("APP_PAYPAL_ENABLED").toString().equals("FALSE")){
-            card_view_paypal.setVisibility(View.GONE);
-        }
-        if (prf.getString("APP_CASH_ENABLED").toString().equals("FALSE")){
-            card_view_cash.setVisibility(View.GONE);
-        }
-        if (prf.getString("APP_GPLAY_ENABLED").toString().equals("FALSE")){
-            card_view_gpay.setVisibility(View.GONE);
-        }
-        relative_layout_select_method.setOnClickListener(v->{
-            if(payment_methode_id.equals("null")) {
-                Toasty.error(getApplicationContext(), getResources().getString(R.string.select_payment_method), Toast.LENGTH_LONG).show();
-                return;
-            }
-            switch (payment_methode_id){
-                case "gp" :
-                    subscribe();
-                    dialog.dismiss();
-                    break;
-                default:
-                    PrefManager prf1= new PrefManager(getApplicationContext());
-                    if (prf1.getString("LOGGED").toString().equals("TRUE")){
-                        Intent intent  =  new Intent(getApplicationContext(), PlansActivity.class);
-                        intent.putExtra("method",payment_methode_id);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                        dialog.dismiss();
-
-                    }else{
-                        Intent intent= new Intent(MovieActivity.this, LoginActivity.class);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                    }
-                    dialog.dismiss();
-                    break;
-            }
-        });
-
-        if (withAds){
-            relative_layout_watch_ads.setVisibility(View.VISIBLE);
-        }else{
-            relative_layout_watch_ads.setVisibility(View.GONE);
-        }
-        relative_layout_watch_ads.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mRewardedVideoAd != null) {
-                    mRewardedVideoAd.show(MovieActivity.this, rewardItem -> {
-                        dialog.dismiss();
-                        Toasty.success(getApplicationContext(),getString(R.string.use_content_for_free)).show();
-                        Log.d("Rewarded","onRewarded ");
-                        switch (operationAfterAds){
-                            case  100 :
-                                poster.setDownloadas("1");
-                                break;
-                            case  200 :
-                                poster.setPlayas("1");
-                                break;
-                            case 300 :
-                                if (current_position_play != -1 ){
-                                    playSources.get(current_position_play).setPremium("1");
-                                    showSourcesPlayDialog();
-                                }
-                                break;
-                            case 400:
-                                if (current_position_download != -1 ){
-                                    downloadableList.get(current_position_download).setPremium("1");
-                                    showSourcesDownloadDialog();
-                                }
-                                break;
-                        }
-                    });
-                }else{
-                    autoDisplay =  true;
-                    loadRewardedVideoAd();
-                    text_view_watch_ads.setText("SHOW LOADING.");
-                }
-            }
-        });
-        TextView text_view_go_pro=(TextView) dialog.findViewById(R.id.text_view_go_pro);
-        text_view_go_pro.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                payment_methode.setVisibility(View.VISIBLE);
-                dialog_content.setVisibility(View.GONE);
-                relative_layout_subscibe_back.setVisibility(View.VISIBLE);
-            }
-        });
-        relative_layout_subscibe_back.setOnClickListener(v->{
-            payment_methode.setVisibility(View.GONE);
-            dialog_content.setVisibility(View.VISIBLE);
-            relative_layout_subscibe_back.setVisibility(View.GONE);
-        });
-        card_view_gpay.setOnClickListener(v->{
-            payment_methode_id="gp";
-            card_view_gpay.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
-            card_view_paypal.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_cash.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_credit_card.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-        });
-        card_view_paypal.setOnClickListener(v->{
-            payment_methode_id="pp";
-            card_view_gpay.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_paypal.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
-            card_view_cash.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_credit_card.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-        });
-        card_view_credit_card.setOnClickListener(v->{
-            payment_methode_id="cc";
-            card_view_gpay.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_paypal.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_cash.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_credit_card.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
-        });
-        card_view_cash.setOnClickListener(v->{
-            payment_methode_id="cash";
-            card_view_gpay.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_paypal.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-            card_view_cash.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
-            card_view_credit_card.setCardBackgroundColor(getResources().getColor(R.color.dark_gray));
-        });
-        dialog.setOnKeyListener(new Dialog.OnKeyListener() {
-
-            @Override
-            public boolean onKey(DialogInterface arg0, int keyCode,
-                                 KeyEvent event) {
-                // TODO Auto-generated method stub
-                if (keyCode == KeyEvent.KEYCODE_BACK) {
-
-                    dialog.dismiss();
-                }
-                return true;
-            }
-        });
-        dialog.show();
-    }
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String[] permissions, int[] grantResults) {
@@ -1955,12 +1593,12 @@ public class MovieActivity extends AppCompatActivity {
         }
     }
     public void showAdsBanner() {
-        if (!checkSUBSCRIBED()) {
+        // if (!checkSUBSCRIBED()) { // Subscription removed - ads always shown if configured
             PrefManager prefManager= new PrefManager(getApplicationContext());
-            if (!prefManager.getString("ADMIN_BANNER_TYPE").equals("FALSE")){
+            if (!prefManager.getString("ADMIN_BANNER_TYPE","FALSE").equals("FALSE")){ // Added default value
                 showAdmobBanner();
             }
-        }
+        // }
     }
     public void showAdmobBanner(){
         PrefManager prefManager= new PrefManager(getApplicationContext());
@@ -2000,31 +1638,31 @@ public class MovieActivity extends AppCompatActivity {
                 .setDestinationUri(Uri.fromFile(fileName));// Uri of the destination file
         DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
         long downloadId = downloadManager.enqueue(request);// enqueue puts the download request in the queue.
-        if (!isMyServiceRunning(SerieActivity.class)) {
+        if (!isMyServiceRunning(SerieActivity.class)) { // This check might be problematic if SerieActivity isn't the only one starting downloads
             startService(new Intent(MovieActivity.this, ToastService.class));
         }
         Toasty.info(this, "Download has been started ...", Toast.LENGTH_LONG).show();
         expandPanel(this);
 
 
-        DownloadItem downloadItem = new DownloadItem(source.getId(), poster.getTitle(), "movie", Uri.fromFile(fileName).getPath(), poster.getImage(), "", "", poster.getId(), downloadId);
-        if (poster.getDuration() != null)
-            downloadItem.setDuration(poster.getDuration());
-        else
-            downloadItem.setDuration("");
+        // DownloadItem downloadItem = new DownloadItem(source.getId(), poster.getTitle(), "movie", Uri.fromFile(fileName).getPath(), poster.getImage(), "", "", poster.getId(), downloadId);
+        // if (poster.getDuration() != null)
+        //     downloadItem.setDuration(poster.getDuration());
+        // else
+        //     downloadItem.setDuration("");
 
-        List<DownloadItem> my_downloads_temp = Hawk.get("my_downloads_temp");
-        if (my_downloads_temp == null) {
-            my_downloads_temp = new ArrayList<>();
-        }
-        for (int i = 0; i < my_downloads_temp.size(); i++) {
-            if (my_downloads_temp.get(i).getId().equals(source.getId())) {
-                my_downloads_temp.remove(my_downloads_temp.get(i));
-                Hawk.put("my_downloads_temp", my_downloads_temp);
-            }
-        }
-        my_downloads_temp.add(downloadItem);
-        Hawk.put("my_downloads_temp", my_downloads_temp);
+        // List<DownloadItem> my_downloads_temp = Hawk.get("my_downloads_temp"); // Hawk usage removed
+        // if (my_downloads_temp == null) {
+        //     my_downloads_temp = new ArrayList<>();
+        // }
+        // for (int i = 0; i < my_downloads_temp.size(); i++) {
+        //     if (my_downloads_temp.get(i).getId().equals(source.getId())) {
+        //         my_downloads_temp.remove(my_downloads_temp.get(i));
+        //         Hawk.put("my_downloads_temp", my_downloads_temp);
+        //     }
+        // }
+        // my_downloads_temp.add(downloadItem);
+        // Hawk.put("my_downloads_temp", my_downloads_temp);
     }
     public void DownloadQ(Source source){
         my.cinemax.app.free.Utils.Log.log("Android Q");
@@ -2037,31 +1675,31 @@ public class MovieActivity extends AppCompatActivity {
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,poster.getTitle().replace(" ", "_").replace(".", "").replaceAll("[^\\.A-Za-z0-9_]", "") + "_" + source.getId() + "." + source.getType());// Uri of the destination file
         DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
         long downloadId = downloadManager.enqueue(request);// enqueue puts the download request in the queue.
-        if (!isMyServiceRunning(SerieActivity.class)) {
+        if (!isMyServiceRunning(SerieActivity.class)) { // This check might be problematic
             startService(new Intent(MovieActivity.this, ToastService.class));
         }
         Toasty.info(this, "Download has been started ...", Toast.LENGTH_LONG).show();
         expandPanel(this);
 
 
-        DownloadItem downloadItem = new DownloadItem(source.getId(), poster.getTitle(), "movie", Uri.fromFile(fileName).getPath(), poster.getImage(), "", "", poster.getId(), downloadId);
-        if (poster.getDuration() != null)
-            downloadItem.setDuration(poster.getDuration());
-        else
-            downloadItem.setDuration("");
-
-        List<DownloadItem> my_downloads_temp = Hawk.get("my_downloads_temp");
-        if (my_downloads_temp == null) {
-            my_downloads_temp = new ArrayList<>();
-        }
-        for (int i = 0; i < my_downloads_temp.size(); i++) {
-            if (my_downloads_temp.get(i).getId().equals(source.getId())) {
-                my_downloads_temp.remove(my_downloads_temp.get(i));
-                Hawk.put("my_downloads_temp", my_downloads_temp);
-            }
-        }
-        my_downloads_temp.add(downloadItem);
-        Hawk.put("my_downloads_temp", my_downloads_temp);
+        // DownloadItem downloadItem = new DownloadItem(source.getId(), poster.getTitle(), "movie", Uri.fromFile(fileName).getPath(), poster.getImage(), "", "", poster.getId(), downloadId);
+        // if (poster.getDuration() != null)
+        //     downloadItem.setDuration(poster.getDuration());
+        // else
+        //     downloadItem.setDuration("");
+        //
+        // List<DownloadItem> my_downloads_temp = Hawk.get("my_downloads_temp"); // Hawk usage removed
+        // if (my_downloads_temp == null) {
+        //     my_downloads_temp = new ArrayList<>();
+        // }
+        // for (int i = 0; i < my_downloads_temp.size(); i++) {
+        //     if (my_downloads_temp.get(i).getId().equals(source.getId())) {
+        //         my_downloads_temp.remove(my_downloads_temp.get(i));
+        //         Hawk.put("my_downloads_temp", my_downloads_temp);
+        //     }
+        // }
+        // my_downloads_temp.add(downloadItem);
+        // Hawk.put("my_downloads_temp", my_downloads_temp);
     }
 
     public void openLink(int position){
@@ -2079,3 +1717,4 @@ public class MovieActivity extends AppCompatActivity {
 
 
 }
+>>>>>>> REPLACE

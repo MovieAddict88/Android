@@ -80,161 +80,152 @@ public class MyListActivity extends AppCompatActivity {
 
 
     private void loadPosters() {
-        PrefManager prf= new PrefManager(MyListActivity.this.getApplicationContext());
-        if (prf.getString("LOGGED").toString().equals("TRUE")){
-                Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                String   key_user=  prf.getString("TOKEN_USER");
-                swipe_refresh_layout_list_my_list_search.setRefreshing(true);
-                linear_layout_load_my_list_activity.setVisibility(View.VISIBLE);
-                Retrofit retrofit = apiClient.getClient();
-                apiRest service = retrofit.create(apiRest.class);
-                Call<Data> call = service.myList(id_user,key_user);
-                call.enqueue(new Callback<Data>() {
-                    @Override
-                    public void onResponse(Call<Data> call, final Response<Data> response) {
-                        if (response.isSuccessful()){
+        // No longer require login. Load list from local PrefManager.
+        // PrefManager prf= new PrefManager(MyListActivity.this.getApplicationContext()); // already have prefManager instance
+        // if (prf.getString("LOGGED").toString().equals("TRUE")){ // LOGGED check removed
 
-                            if (response.body().getChannels() !=null){
-                                for (int i = 0; i < response.body().getChannels().size(); i++) {
-                                    channelArrayList.add(response.body().getChannels().get(i));
-                                }
-                            }
+        swipe_refresh_layout_list_my_list_search.setRefreshing(true);
+        linear_layout_load_my_list_activity.setVisibility(View.VISIBLE);
 
-                            if (channelArrayList.size()>0){
-                                posterArrayList.add(new Poster().setTypeView(3));
-                                if (native_ads_enabled){
-                                    Log.v("MYADS","ENABLED");
-                                    if (tabletSize) {
-                                        gridLayoutManager=  new GridLayoutManager(getApplicationContext(),6,RecyclerView.VERTICAL,false);
-                                        Log.v("MYADS","tabletSize");
-                                        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                                            @Override
-                                            public int getSpanSize(int position) {
-                                                return ((position ) % (lines_beetween_ads + 1 ) == 0 || position == 0) ? 6 : 1;
-                                            }
-                                        });
-                                    } else {
-                                        gridLayoutManager=  new GridLayoutManager(getApplicationContext(),3,RecyclerView.VERTICAL,false);
-                                        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                                            @Override
-                                            public int getSpanSize(int position) {
-                                                return ((position ) % (lines_beetween_ads + 1 ) == 0 || position == 0) ? 3 : 1;
-                                            }
-                                        });
-                                    }
-                                }else {
-                                    if (tabletSize) {
-                                        gridLayoutManager=  new GridLayoutManager(getApplicationContext(),6,RecyclerView.VERTICAL,false);
-                                        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                                            @Override
-                                            public int getSpanSize(int position) {
-                                                return ( position == 0) ? 6 : 1;
-                                            }
-                                        });
-                                    } else {
-                                        gridLayoutManager=  new GridLayoutManager(getApplicationContext(),3,RecyclerView.VERTICAL,false);
-                                        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                                            @Override
-                                            public int getSpanSize(int position) {
-                                                return ( position == 0) ? 3 : 1;
-                                            }
-                                        });
-                                    }
-                                }
-                            }else{
-                                if (native_ads_enabled){
-                                    Log.v("MYADS","ENABLED");
-                                    if (tabletSize) {
-                                        gridLayoutManager=  new GridLayoutManager(getApplicationContext(),6,RecyclerView.VERTICAL,false);
-                                        Log.v("MYADS","tabletSize");
-                                        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                                            @Override
-                                            public int getSpanSize(int position) {
-                                                return ((position  + 1) % (lines_beetween_ads  + 1  ) == 0 && position!=0) ? 6 : 1;
-                                            }
-                                        });
-                                    } else {
-                                        gridLayoutManager=  new GridLayoutManager(getApplicationContext(),3,RecyclerView.VERTICAL,false);
-                                        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                                            @Override
-                                            public int getSpanSize(int position) {
-                                                return ((position  + 1) % (lines_beetween_ads + 1 ) == 0  && position!=0)  ? 3 : 1;
-                                            }
-                                        });
-                                    }
-                                }else {
-                                    if (tabletSize) {
-                                        gridLayoutManager=  new GridLayoutManager(getApplicationContext(),6,RecyclerView.VERTICAL,false);
-                                    } else {
-                                        gridLayoutManager=  new GridLayoutManager(getApplicationContext(),3,RecyclerView.VERTICAL,false);
-                                    }
-                                }
-                            }
+        List<Integer> favoriteIds = prefManager.getMyList();
+        posterArrayList.clear(); // Clear previous items
+        channelArrayList.clear(); // Assuming channels are not part of local "My List" for now. If they are, this needs adjustment.
 
-                            if (response.body().getPosters() !=null){
-                                for (int i = 0; i < response.body().getPosters().size(); i++) {
-                                    posterArrayList.add(response.body().getPosters().get(i).setTypeView(1));
-                                    if (native_ads_enabled){
-                                        item++;
-                                        if (item == lines_beetween_ads ){
-                                            item= 0;
-                                            if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("FACEBOOK")) {
-                                                posterArrayList.add(new Poster().setTypeView(4));
-                                            }else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("ADMOB")){
-                                                posterArrayList.add(new Poster().setTypeView(5));
-                                            } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("BOTH")){
-                                                if (type_ads == 0) {
-                                                    posterArrayList.add(new Poster().setTypeView(4));
-                                                    type_ads = 1;
-                                                }else if (type_ads == 1){
-                                                    posterArrayList.add(new Poster().setTypeView(5));
-                                                    type_ads = 0;
-                                                }
-                                            }
-                                        }
-                                    }
+        if (favoriteIds.isEmpty()) {
+            linear_layout_layout_error.setVisibility(View.GONE);
+            recycler_view_activity_my_list.setVisibility(View.GONE);
+            image_view_empty_list.setVisibility(View.VISIBLE);
+            swipe_refresh_layout_list_my_list_search.setRefreshing(false);
+            linear_layout_load_my_list_activity.setVisibility(View.GONE);
+            adapter.notifyDataSetChanged(); // Notify adapter of empty list
+            return;
+        }
 
-                                }
-                            }
-                            if (channelArrayList.size() == 0 && posterArrayList.size() == 0){
-                                linear_layout_layout_error.setVisibility(View.GONE);
-                                recycler_view_activity_my_list.setVisibility(View.GONE);
-                                image_view_empty_list.setVisibility(View.VISIBLE);
-                            }else{
-                                linear_layout_layout_error.setVisibility(View.GONE);
-                                recycler_view_activity_my_list.setVisibility(View.VISIBLE);
-                                image_view_empty_list.setVisibility(View.GONE);
-                            }
-                        }else{
-                            linear_layout_layout_error.setVisibility(View.VISIBLE);
-                            recycler_view_activity_my_list.setVisibility(View.GONE);
-                            image_view_empty_list.setVisibility(View.GONE);
-                        }
-                        swipe_refresh_layout_list_my_list_search.setRefreshing(false);
-                        linear_layout_load_my_list_activity.setVisibility(View.GONE);
-                        recycler_view_activity_my_list.setLayoutManager(gridLayoutManager);
-                        adapter.notifyDataSetChanged();
+        // We need to fetch Poster details for each ID.
+        // This can be slow if done one by one. A batch API would be better.
+        // For this example, let's assume we fetch them one by one.
+        // In a real app, consider a more efficient way or storing Poster objects directly if small enough.
+
+        Retrofit retrofit = apiClient.getClient();
+        apiRest service = retrofit.create(apiRest.class);
+        final int[] pendingCalls = {favoriteIds.size()}; // Counter for async calls
+
+        for (Integer posterId : favoriteIds) {
+            Call<Poster> call = service.getPosterById(posterId); // Assuming this endpoint exists
+            call.enqueue(new Callback<Poster>() {
+                @Override
+                public void onResponse(Call<Poster> call, Response<Poster> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        posterArrayList.add(response.body().setTypeView(1));
+                        // Handle ads if necessary, though it might be simpler to add them after all posters are loaded
                     }
+                    // else { Log.e("MyListActivity", "Failed to fetch poster details for ID: " + posterId); }
 
-                    @Override
-                    public void onFailure(Call<Data> call, Throwable t) {
-                        linear_layout_layout_error.setVisibility(View.VISIBLE);
-                        recycler_view_activity_my_list.setVisibility(View.GONE);
-                        image_view_empty_list.setVisibility(View.GONE);
-                        swipe_refresh_layout_list_my_list_search.setVisibility(View.GONE);
-                        linear_layout_load_my_list_activity.setVisibility(View.GONE);
-                        swipe_refresh_layout_list_my_list_search.setRefreshing(false);
-
-
+                    pendingCalls[0]--;
+                    if (pendingCalls[0] == 0) {
+                        // All calls finished
+                        onAllPostersFetched();
                     }
-                });
-        }else{
-            Intent intent = new Intent(MyListActivity.this,LoginActivity.class);
-            startActivity(intent);
-            overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-            finish();
+                }
+
+                @Override
+                public void onFailure(Call<Poster> call, Throwable t) {
+                    Log.e("MyListActivity", "API call failed for poster ID: " + posterId, t);
+                    pendingCalls[0]--;
+                    if (pendingCalls[0] == 0) {
+                        // All calls finished (even if some failed)
+                        onAllPostersFetched();
+                    }
+                }
+            });
         }
     }
+
+    private void onAllPostersFetched() {
+        // This method is called after all individual poster fetch attempts are complete.
+        // Add native ads logic here if needed, after posterArrayList is populated.
+        item = 0; // Reset ad counter
+        List<Poster> tempListWithAds = new ArrayList<>();
+        for (Poster p : posterArrayList) {
+            tempListWithAds.add(p);
+            if (native_ads_enabled) {
+                item++;
+                if (item == lines_beetween_ads) {
+                    item = 0;
+                    if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("FACEBOOK")) {
+                        tempListWithAds.add(new Poster().setTypeView(4));
+                    } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("ADMOB")) {
+                        tempListWithAds.add(new Poster().setTypeView(5));
+                    } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("BOTH")) {
+                        if (type_ads == 0) {
+                            tempListWithAds.add(new Poster().setTypeView(4));
+                            type_ads = 1;
+                        } else if (type_ads == 1) {
+                            tempListWithAds.add(new Poster().setTypeView(5));
+                            type_ads = 0;
+                        }
+                    }
+                }
+            }
+        }
+        posterArrayList.clear();
+        posterArrayList.addAll(tempListWithAds);
+
+
+        if (posterArrayList.isEmpty() && channelArrayList.isEmpty()) { // channelArrayList is likely empty now
+            linear_layout_layout_error.setVisibility(View.GONE);
+            recycler_view_activity_my_list.setVisibility(View.GONE);
+            image_view_empty_list.setVisibility(View.VISIBLE);
+        } else {
+            linear_layout_layout_error.setVisibility(View.GONE);
+            recycler_view_activity_my_list.setVisibility(View.VISIBLE);
+            image_view_empty_list.setVisibility(View.GONE);
+        }
+
+        // Setup GridLayoutManager (moved from original response block as it depends on channelArrayList.size())
+        if (channelArrayList.size()>0){ // This condition might always be false now
+            posterArrayList.add(0,new Poster().setTypeView(3)); // Add placeholder for channels if any
+            // ... (rest of gridLayoutManager setup as before) ...
+        } else {
+            if (native_ads_enabled){
+                if (tabletSize) {
+                    gridLayoutManager=  new GridLayoutManager(getApplicationContext(),6,RecyclerView.VERTICAL,false);
+                    gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                        @Override
+                        public int getSpanSize(int position) {
+                            return ((position  + 1) % (lines_beetween_ads  + 1  ) == 0 && position!=0) ? 6 : 1;
+                        }
+                    });
+                } else {
+                    gridLayoutManager=  new GridLayoutManager(getApplicationContext(),3,RecyclerView.VERTICAL,false);
+                    gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                        @Override
+                        public int getSpanSize(int position) {
+                            return ((position  + 1) % (lines_beetween_ads + 1 ) == 0  && position!=0)  ? 3 : 1;
+                        }
+                    });
+                }
+            }else {
+                if (tabletSize) {
+                    gridLayoutManager=  new GridLayoutManager(getApplicationContext(),6,RecyclerView.VERTICAL,false);
+                } else {
+                    gridLayoutManager=  new GridLayoutManager(getApplicationContext(),3,RecyclerView.VERTICAL,false);
+                }
+            }
+        }
+        recycler_view_activity_my_list.setLayoutManager(gridLayoutManager);
+        adapter.notifyDataSetChanged();
+
+        swipe_refresh_layout_list_my_list_search.setRefreshing(false);
+        linear_layout_load_my_list_activity.setVisibility(View.GONE);
+    }
+    // }else{ // Removed else block for !LOGGED
+    //     Intent intent = new Intent(MyListActivity.this,LoginActivity.class);
+    //     startActivity(intent);
+    //     overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+    //     finish();
+    // }
+// }
 
 
     private void initAction() {

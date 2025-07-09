@@ -80,31 +80,33 @@ public class SplashActivity extends AppCompatActivity {
         prf.setString("ADMIN_NATIVE_ADMOB_ID","");
         prf.setString("ADMIN_NATIVE_LINES","6");
         prf.setString("ADMIN_NATIVE_TYPE","FALSE");
-        prf.setString("APP_STRIPE_ENABLED","FALSE");
-        prf.setString("APP_PAYPAL_ENABLED","FALSE");
-        prf.setString("APP_PAYPAL_CLIENT_ID","");
-        prf.setString("APP_CASH_ENABLED","FALSE");
-        prf.setString("APP_LOGIN_REQUIRED","FALSE");
+        // APP_LOGIN_REQUIRED is no longer used, so remove setting it.
+        // prf.setString("APP_LOGIN_REQUIRED","FALSE");
 
+        // Payment related preferences are no longer used.
+        // prf.setString("APP_STRIPE_ENABLED","FALSE");
+        // prf.setString("APP_PAYPAL_ENABLED","FALSE");
+        // prf.setString("APP_PAYPAL_CLIENT_ID","");
+        // prf.setString("APP_CASH_ENABLED","FALSE");
     }
 
-    public void check(){
-        List<String> listSkuStoreSubs = new ArrayList<>();
-        listSkuStoreSubs.add(Global.SUBSCRIPTION_ID);
-        new BillingSubs(SplashActivity.this, listSkuStoreSubs, new CallBackCheck() {
-            @Override
-            public void onPurchase() {
-                PrefManager prefManager= new PrefManager(getApplicationContext());
-                prefManager.setString("SUBSCRIBED","TRUE");
-            }
-
-            @Override
-            public void onNotPurchase() {
-                PrefManager prefManager= new PrefManager(getApplicationContext());
-                prefManager.setString("SUBSCRIBED","FALSE");
-            }
-        });
-    }
+    // public void check(){ // Billing/Subscription check is removed
+    //     List<String> listSkuStoreSubs = new ArrayList<>();
+    //     listSkuStoreSubs.add(Global.SUBSCRIPTION_ID);
+    //     new BillingSubs(SplashActivity.this, listSkuStoreSubs, new CallBackCheck() {
+    //         @Override
+    //         public void onPurchase() {
+    //             PrefManager prefManager= new PrefManager(getApplicationContext());
+    //             prefManager.setString("SUBSCRIBED","TRUE");
+    //         }
+    //
+    //         @Override
+    //         public void onNotPurchase() {
+    //             PrefManager prefManager= new PrefManager(getApplicationContext());
+    //             prefManager.setString("SUBSCRIBED","FALSE");
+    //         }
+    //     });
+    // }
     private void checkAccount() {
 
         Integer version = -1;
@@ -115,18 +117,19 @@ public class SplashActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         if (version!=-1){
-            Integer id_user = 0;
-            if (prf.getString("LOGGED").toString().equals("TRUE")) {
-                 id_user = Integer.parseInt(prf.getString("ID_USER"));
-            }
+            Integer id_user = 0; // Default to 0 or an anonymous user ID if your API supports it
+            // if (prf.getString("LOGGED").toString().equals("TRUE")) { // LOGGED check removed
+            //      id_user = Integer.parseInt(prf.getString("ID_USER")); // ID_USER will be removed
+            // }
             Retrofit retrofit = apiClient.getClient();
             apiRest service = retrofit.create(apiRest.class);
-            Call<ApiResponse> call = service.check(version,id_user);
+            Call<ApiResponse> call = service.check(version,id_user); // Pass 0 or anonymous ID
             call.enqueue(new Callback<ApiResponse>() {
                 @Override
                 public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                    if (response.isSuccessful()){
+                    if (response.isSuccessful() && response.body() != null && response.body().getValues() != null){
                         for (int i = 0; i < response.body().getValues().size(); i++) {
+                            // Keep admin settings
                             if ( response.body().getValues().get(i).getName().equals("ADMIN_REWARDED_ADMOB_ID") ){
                                 if (response.body().getValues().get(i).getValue()!=null)
                                     prf.setString("ADMIN_REWARDED_ADMOB_ID",response.body().getValues().get(i).getValue());
@@ -175,65 +178,32 @@ public class SplashActivity extends AppCompatActivity {
                                 if (response.body().getValues().get(i).getValue()!=null)
                                     prf.setString("ADMIN_NATIVE_TYPE",response.body().getValues().get(i).getValue());
                             }
-                            if ( response.body().getValues().get(i).getName().equals("APP_CURRENCY") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("APP_CURRENCY",response.body().getValues().get(i).getValue());
-                            }
-                            if ( response.body().getValues().get(i).getName().equals("APP_CASH_ACCOUNT") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("APP_CASH_ACCOUNT",response.body().getValues().get(i).getValue());
-                            }
-                            if ( response.body().getValues().get(i).getName().equals("APP_STRIPE_PUBLIC_KEY") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("APP_STRIPE_PUBLIC_KEY",response.body().getValues().get(i).getValue());
-                            }
+                            // Remove payment/subscription related settings
+                            // if ( response.body().getValues().get(i).getName().equals("APP_CURRENCY") ){...}
+                            // if ( response.body().getValues().get(i).getName().equals("APP_CASH_ACCOUNT") ){...}
+                            // if ( response.body().getValues().get(i).getName().equals("APP_STRIPE_PUBLIC_KEY") ){...}
+                            // if ( response.body().getValues().get(i).getName().equals("APP_CASH_ENABLED") ){...}
+                            // if ( response.body().getValues().get(i).getName().equals("APP_PAYPAL_ENABLED") ){...}
+                            // if ( response.body().getValues().get(i).getName().equals("APP_PAYPAL_CLIENT_ID") ){...}
+                            // if ( response.body().getValues().get(i).getName().equals("APP_STRIPE_ENABLED") ){...}
 
-                            if ( response.body().getValues().get(i).getName().equals("APP_CASH_ENABLED") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("APP_CASH_ENABLED",response.body().getValues().get(i).getValue());
-                            }
+                            // APP_LOGIN_REQUIRED will be effectively false
+                            // if ( response.body().getValues().get(i).getName().equals("APP_LOGIN_REQUIRED") ){...}
 
-                            if ( response.body().getValues().get(i).getName().equals("APP_PAYPAL_ENABLED") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("APP_PAYPAL_ENABLED",response.body().getValues().get(i).getValue());
-                            }
-
-                            if ( response.body().getValues().get(i).getName().equals("APP_PAYPAL_CLIENT_ID") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("APP_PAYPAL_CLIENT_ID",response.body().getValues().get(i).getValue());
-                            }
-                            if ( response.body().getValues().get(i).getName().equals("APP_STRIPE_ENABLED") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("APP_STRIPE_ENABLED",response.body().getValues().get(i).getValue());
-                            }
-
-                            if ( response.body().getValues().get(i).getName().equals("APP_LOGIN_REQUIRED") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("APP_LOGIN_REQUIRED",response.body().getValues().get(i).getValue());
-                            }
-                            if ( response.body().getValues().get(i).getName().equals("subscription") ){
-                                if (response.body().getValues().get(i).getValue()!=null)
-                                    prf.setString("NEW_SUBSCRIBE_ENABLED",response.body().getValues().get(i).getValue());
-                            }
-
-
-
+                            // NEW_SUBSCRIBE_ENABLED will be effectively false
+                            // if ( response.body().getValues().get(i).getName().equals("subscription") ){...}
                         }
-                        if (response.body().getValues().get(1).getValue().equals("403")){
-                            prf.remove("ID_USER");
-                            prf.remove("SALT_USER");
-                            prf.remove("TOKEN_USER");
-                            prf.remove("NAME_USER");
-                            prf.remove("TYPE_USER");
-                            prf.remove("USERN_USER");
-                            prf.remove("IMAGE_USER");
-                            prf.remove("LOGGED");
-                            prf.remove("NEW_SUBSCRIBE_ENABLED");
-                            Toasty.error(getApplicationContext(),getResources().getString(R.string.account_disabled), Toast.LENGTH_SHORT, true).show();
-                        }
+
+                        // Remove account disabled check (403) as it's tied to user login
+                        // if (response.body().getValues().get(1).getValue().equals("403")){
+                        //     prf.remove("ID_USER"); ... // All this user data removal is handled later
+                        //     Toasty.error(getApplicationContext(),getResources().getString(R.string.account_disabled), Toast.LENGTH_SHORT, true).show();
+                        // }
+
+                        // App update check (202) can remain if it's a general app update mechanism
                         if (response.body().getCode().equals(200)) {
                             redirect();
-                        }else if (response.body().getCode().equals(202)) {
+                        } else if (response.body().getCode().equals(202)) {
                             String title_update=response.body().getValues().get(0).getValue();
                             String featurs_update=response.body().getMessage();
                             View v = (View)  getLayoutInflater().inflate(R.layout.update_message,null);
@@ -284,33 +254,20 @@ public class SplashActivity extends AppCompatActivity {
 
 
     public void redirect(){
-        if (!prf.getString("first").equals("true")) {
+        // LOGIN_REQUIRED and LOGGED checks are removed.
+        // The app will always behave as if login is not required and the user is effectively anonymous.
+        if (!prf.getBoolean("first", false)) { // Use getBoolean with a default for "first"
             Intent intent = new Intent(SplashActivity.this,IntroActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.enter, R.anim.exit);
             finish();
-            prf.setString("first","true");
+            prf.setBoolean("first",true); // Set it as boolean
         }else{
-            if (prf.getString("APP_LOGIN_REQUIRED").toString().equals("TRUE")){
-                if (prf.getString("LOGGED").toString().equals("TRUE")){
-                    Intent intent = new Intent(SplashActivity.this,HomeActivity.class);
-                    startActivity(intent);
-                    overridePendingTransition(R.anim.enter, R.anim.exit);
-                    finish();
-                }else{
-                    Intent intent= new Intent(SplashActivity.this, LoginActivity.class);
-                    startActivity(intent);
-                    overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                    finish();
-                }
-            }else{
-                Intent intent = new Intent(SplashActivity.this,HomeActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.enter, R.anim.exit);
-                finish();
-            }
+            Intent intent = new Intent(SplashActivity.this,HomeActivity.class);
+            startActivity(intent);
+            overridePendingTransition(R.anim.enter, R.anim.exit);
+            finish();
         }
-
     }
 
 

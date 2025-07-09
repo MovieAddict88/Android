@@ -198,28 +198,22 @@ public class PosterAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
                 });
                 holder.image_view_item_poster_delete.setOnClickListener(v->{
-                    final PrefManager prefManager = new PrefManager(activity);
-                    Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-                    String   key_user=  prefManager.getString("TOKEN_USER");
-                    Retrofit retrofit = apiClient.getClient();
-                    apiRest service = retrofit.create(apiRest.class);
-                    Call<Integer> call = service.AddMyList(posterList.get(position).getId(),id_user,key_user,"poster");
-                    call.enqueue(new Callback<Integer>() {
-                        @Override
-                        public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                            if (response.isSuccessful()){
-                                if (response.body() == 202){
-                                    Toasty.warning(activity, "This movie has been removed from your list", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                        }
-                        @Override
-                        public void onFailure(Call<Integer> call, Throwable t) {
-                        }
-                    });
+                    // Local "My List" update
+                    final PrefManager prefManager = new PrefManager(activity.getApplicationContext());
+                    Integer posterIdToDelete = posterList.get(position).getId();
+
+                    prefManager.removeFromMyList(posterIdToDelete);
+                    Toasty.warning(activity, "This item has been removed from your local list", Toast.LENGTH_SHORT).show();
+
                     posterList.remove(position);
                     notifyItemRemoved(position);
-                    notifyDataSetChanged();
+                    // It's often better to use notifyItemRangeChanged or specific change notifications
+                    // but for simplicity in this context, notifyDataSetChanged() is used if the list can reorder or ads are complex.
+                    // However, since we only remove one item, notifyItemRemoved and potentially notifyItemRangeChanged is better.
+                    // Let's ensure the adapter correctly reflects the removal without full notifyDataSetChanged if possible.
+                    // For a simple removal, notifyItemRemoved should be enough if there are no other structural changes.
+                    // If item positions shift and view holders need re-binding for other items, then notifyDataSetChanged() or notifyItemRangeChanged is safer.
+                    notifyDataSetChanged(); // Kept for safety in case of complex layouts / ads.
 
                 });
                 break;
