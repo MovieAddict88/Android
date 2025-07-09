@@ -24,6 +24,8 @@ import my.cinemax.app.free.api.apiClient;
 import my.cinemax.app.free.api.apiRest;
 import my.cinemax.app.free.entity.Data;
 import my.cinemax.app.free.entity.Genre;
+import my.cinemax.app.free.entity.Poster; // Added for explicit Poster list handling
+import my.cinemax.app.free.repository.LocalDataRepository; // Added import
 import my.cinemax.app.free.ui.Adapters.HomeAdapter;
 
 import java.util.ArrayList;
@@ -59,6 +61,7 @@ public class HomeFragment extends Fragment {
     private int type_ads = 0;
     private PrefManager prefManager;
     private Integer item = 0 ;
+    private LocalDataRepository localDataRepository; // Added field
 
     public HomeFragment() {
         // Required empty public constructor
@@ -68,6 +71,7 @@ public class HomeFragment extends Fragment {
 
         this.view=  inflater.inflate(R.layout.fragment_home, container, false);
         prefManager= new PrefManager(getApplicationContext());
+        this.localDataRepository = new LocalDataRepository(); // Initialize repository
 
         initViews();
         initActions();
@@ -76,76 +80,115 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadData() {
-
         showLoadingView();
-        Retrofit retrofit = apiClient.getClient();
-        apiRest service = retrofit.create(apiRest.class);
-        Call<Data> call = service.homeData();
-        call.enqueue(new Callback<Data>() {
-            @Override
-            public void onResponse(Call<Data> call, Response<Data> response) {
-                apiClient.FormatData(getActivity(),response);
-                if (response.isSuccessful()){
-                    dataList.clear();
-                    dataList.add(new Data().setViewType(0));
-                    if (response.body().getSlides().size()>0){
-                        Data sliodeData =  new Data();
-                        sliodeData.setSlides(response.body().getSlides());
-                        dataList.add(sliodeData);
+
+        // New local data loading logic
+        Data localData = localDataRepository.loadData(getContext());
+
+        if (localData != null) {
+            // apiClient.FormatData(getActivity(),response); // This was for remote config, may need to be handled differently or removed if not applicable
+
+            dataList.clear();
+            dataList.add(new Data().setViewType(0)); // Assuming this is for a header or some UI element
+
+            if (localData.getSlides() != null && localData.getSlides().size() > 0) {
+                Data slideData = new Data();
+                slideData.setSlides(localData.getSlides());
+                dataList.add(slideData);
+            }
+
+            if (localData.getChannels() != null && localData.getChannels().size() > 0) {
+                Data channelData = new Data();
+                channelData.setChannels(localData.getChannels());
+                dataList.add(channelData);
+            }
+
+            // Movies Section
+            if (localData.getMovies() != null && localData.getMovies().size() > 0) {
+                Genre moviesGenre = new Genre();
+                moviesGenre.setTitle("Movies");
+                // moviesGenre.setId(-100); // Optional: give it a unique ID if adapter needs it
+
+                // Filter movies that don't have basic info (e.g. no sources) - if necessary
+                List<Poster> validMovies = new ArrayList<>();
+                for(Poster movie : localData.getMovies()){
+                    if(movie.getSources() != null && !movie.getSources().isEmpty()){
+                        validMovies.add(movie);
                     }
-                    if (response.body().getChannels().size()>0){
-                       Data channelData = new Data();
-                       channelData.setChannels(response.body().getChannels());
-                        dataList.add(channelData);
-                    }
-                    if (response.body().getActors().size()>0){
-                        Data actorsData = new Data();
-                        actorsData.setActors(response.body().getActors());
-                        dataList.add(actorsData);
-                    }
-                    if (response.body().getGenres().size()>0){
-                        if (my_genre_list!=null){
-                            Data genreDataMyList = new Data();
-                            genreDataMyList.setGenre(my_genre_list);
-                            dataList.add(genreDataMyList);
-                        }
-                        for (int i = 0; i < response.body().getGenres().size(); i++) {
-                            Data genreData = new Data();
-                            genreData.setGenre(response.body().getGenres().get(i));
-                            dataList.add(genreData);
-                            if (native_ads_enabled){
-                                item++;
-                                if (item == lines_beetween_ads ){
-                                    item= 0;
-                                    if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("FACEBOOK")) {
-                                        dataList.add(new Data().setViewType(5));
-                                    }else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("ADMOB")){
-                                        dataList.add(new Data().setViewType(6));
-                                    } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("BOTH")){
-                                        if (type_ads == 0) {
-                                            dataList.add(new Data().setViewType(5));
-                                            type_ads = 1;
-                                        }else if (type_ads == 1){
-                                            dataList.add(new Data().setViewType(6));
-                                            type_ads = 0;
-                                        }
-                                    }
+                }
+                if(!validMovies.isEmpty()){
+                    moviesGenre.setPosters(validMovies);
+                    Data moviesDataSection = new Data();
+                    moviesDataSection.setGenre(moviesGenre);
+                    dataList.add(moviesDataSection);
+
+                    if (native_ads_enabled){
+                        item++;
+                        if (item == lines_beetween_ads ){
+                            item= 0;
+                            if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("FACEBOOK")) {
+                                dataList.add(new Data().setViewType(5));
+                            } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("ADMOB")){
+                                dataList.add(new Data().setViewType(6));
+                            } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("BOTH")){
+                                if (type_ads == 0) {
+                                    dataList.add(new Data().setViewType(5));
+                                    type_ads = 1;
+                                } else if (type_ads == 1){
+                                    dataList.add(new Data().setViewType(6));
+                                    type_ads = 0;
                                 }
                             }
                         }
                     }
-                    showListView();
-                    homeAdapter.notifyDataSetChanged();
-                }else{
-                    showErrorView();
                 }
             }
 
-            @Override
-            public void onFailure(Call<Data> call, Throwable t) {
-                showErrorView();
+            // Series Section
+            if (localData.getSeries() != null && localData.getSeries().size() > 0) {
+                Genre seriesGenre = new Genre();
+                seriesGenre.setTitle("TV Series");
+                // seriesGenre.setId(-101); // Optional: give it a unique ID
+
+                List<Poster> validSeries = new ArrayList<>();
+                for(Poster seriesItem : localData.getSeries()){
+                    // Add validation if needed, e.g. check for seasons/episodes if structure allows
+                    validSeries.add(seriesItem);
+                }
+
+                if(!validSeries.isEmpty()){
+                    seriesGenre.setPosters(validSeries);
+                    Data seriesDataSection = new Data();
+                    seriesDataSection.setGenre(seriesGenre);
+                    dataList.add(seriesDataSection);
+
+                    if (native_ads_enabled){
+                        item++;
+                         if (item == lines_beetween_ads ){
+                            item= 0;
+                            if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("FACEBOOK")) {
+                                dataList.add(new Data().setViewType(5));
+                            }else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("ADMOB")){
+                                dataList.add(new Data().setViewType(6));
+                            } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("BOTH")){
+                                if (type_ads == 0) {
+                                    dataList.add(new Data().setViewType(5));
+                                    type_ads = 1;
+                                }else if (type_ads == 1){
+                                    dataList.add(new Data().setViewType(6));
+                                    type_ads = 0;
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        });
+            showListView();
+            if (homeAdapter!=null)
+                 homeAdapter.notifyDataSetChanged();
+        } else {
+            showErrorView();
+        }
     }
    private void showLoadingView(){
        linear_layout_load_home_fragment.setVisibility(View.VISIBLE);

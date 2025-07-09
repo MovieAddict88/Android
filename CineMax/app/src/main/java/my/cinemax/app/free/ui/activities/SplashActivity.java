@@ -291,26 +291,12 @@ public class SplashActivity extends AppCompatActivity {
             finish();
             prf.setString("first","true");
         }else{
-            if (prf.getString("APP_LOGIN_REQUIRED").toString().equals("TRUE")){
-                if (prf.getString("LOGGED").toString().equals("TRUE")){
-                    Intent intent = new Intent(SplashActivity.this,HomeActivity.class);
-                    startActivity(intent);
-                    overridePendingTransition(R.anim.enter, R.anim.exit);
-                    finish();
-                }else{
-                    Intent intent= new Intent(SplashActivity.this, LoginActivity.class);
-                    startActivity(intent);
-                    overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-                    finish();
-                }
-            }else{
-                Intent intent = new Intent(SplashActivity.this,HomeActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.enter, R.anim.exit);
-                finish();
-            }
+            // Always redirect to HomeActivity after Intro, bypassing login.
+            Intent intent = new Intent(SplashActivity.this,HomeActivity.class);
+            startActivity(intent);
+            overridePendingTransition(R.anim.enter, R.anim.exit);
+            finish();
         }
-
     }
 
 

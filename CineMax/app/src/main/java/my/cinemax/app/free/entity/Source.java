@@ -32,9 +32,7 @@ public class Source implements Parcelable {
     @Expose
     private String kind;
 
-    @SerializedName("premium")
-    @Expose
-    private String premium;
+    // premium field removed
 
     @SerializedName("external")
     @Expose
@@ -56,7 +54,7 @@ public class Source implements Parcelable {
         quality = in.readString();
         size = in.readString();
         kind = in.readString();
-        premium = in.readString();
+        // premium field removed from parcel
         byte tmpExternal = in.readByte();
         external = tmpExternal == 0 ? null : tmpExternal == 1;
         url = in.readString();
@@ -75,7 +73,7 @@ public class Source implements Parcelable {
         dest.writeString(quality);
         dest.writeString(size);
         dest.writeString(kind);
-        dest.writeString(premium);
+        // premium field removed from parcel
         dest.writeByte((byte) (external == null ? 0 : external ? 1 : 2));
         dest.writeString(url);
     }
@@ -138,9 +136,7 @@ public class Source implements Parcelable {
         this.kind = kind;
     }
 
-    public void setPremium(String premium) {
-        this.premium = premium;
-    }
+    // setPremium method removed
 
     public void setExternal(Boolean external) {
         this.external = external;
@@ -162,9 +158,7 @@ public class Source implements Parcelable {
         return kind;
     }
 
-    public String getPremium() {
-        return premium;
-    }
+    // getPremium method removed
 
     public Boolean getExternal() {
         return external;

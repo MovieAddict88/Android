@@ -1,1 +1,250 @@
-
+```json
+{
+  "slides": [
+    {
+      "id": 1,
+      "title": "Featured: Big Buck Bunny",
+      "type": "movie",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/800px-Big_buck_bunny_poster_big.jpg",
+      "poster_id": 101
+    },
+    {
+      "id": 2,
+      "title": "Live: Blender Open Channel",
+      "type": "channel",
+      "image": "https://via.placeholder.com/1280x720/2d2d2d/ffffff?text=Live+Channel+Slide",
+      "channel_id": 301
+    },
+    {
+      "id": 3,
+      "title": "Trending: Cosmos Laundromat",
+      "type": "movie",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Cosmos_Laundromat_-_First_Cycle_-_Title_Card.jpg/800px-Cosmos_Laundromat_-_First_Cycle_-_Title_Card.jpg",
+      "poster_id": 102
+    }
+  ],
+  "movies": [
+    {
+      "id": 101,
+      "title": "Big Buck Bunny",
+      "description": "A large and lovable rabbit deals with three pesky rodents.",
+      "year": "2008",
+      "duration": "10 min",
+      "rating": 7.5,
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/440px-Big_buck_bunny_poster_big.jpg",
+      "cover": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg",
+      "genres": [
+        { "id": 10, "title": "Animation" },
+        { "id": 11, "title": "Comedy" },
+        { "id": 12, "title": "Short" }
+      ],
+      "sources": [
+        {
+          "id": 1,
+          "type": "mp4",
+          "title": "HD 1080p",
+          "quality": "1080p",
+          "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          "external": false
+        }
+      ],
+      "trailer_url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      "subtitles": [
+        {
+          "id": 1,
+          "language": "English",
+          "url": "https://raw.githubusercontent.com/google/ExoPlayer/release-v2/demos/main/src/main/assets/media/webvtt/numeric-entities.vtt",
+          "type": "vtt"
+        }
+      ]
+    },
+    {
+      "id": 102,
+      "title": "Cosmos Laundromat: First Cycle",
+      "description": "A suicidal sheep encounters a mysterious salesman who offers him 'all the lives he wants'.",
+      "year": "2015",
+      "duration": "12 min",
+      "rating": 8.0,
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Cosmos_Laundromat_-_First_Cycle_-_Title_Card.jpg/440px-Cosmos_Laundromat_-_First_Cycle_-_Title_Card.jpg",
+      "cover": "https://orange.blender.org/wp-content/uploads/2015/07/cosmoslaundromat_header.jpg",
+      "genres": [
+        { "id": 10, "title": "Animation" },
+        { "id": 11, "title": "Comedy" },
+        { "id": 13, "title": "Fantasy" }
+      ],
+      "sources": [
+        {
+          "id": 1,
+          "type": "mp4",
+          "title": "HD 1080p",
+          "quality": "1080p",
+          "url": "http://media.xiph.org/mango/cosmoslaundromat_1080p.mp4",
+          "external": false
+        }
+      ],
+      "trailer_url": "https://www.youtube.com/watch?v=dERSjN22E_0",
+      "subtitles": []
+    },
+    {
+      "id": 103,
+      "title": "Elephants Dream",
+      "description": "Two people explore a strange mechanical world.",
+      "year": "2006",
+      "duration": "11 min",
+      "rating": 7.2,
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Elephants_Dream_s5_ver2_1024x576.jpg/440px-Elephants_Dream_s5_ver2_1024x576.jpg",
+      "cover": "https://orange.blender.org/wp-content/themes/orange/images/media/gallery/s5_00086.jpg",
+      "genres": [
+        { "id": 10, "title": "Animation" },
+        { "id": 12, "title": "Short" },
+        { "id": 13, "title": "Fantasy" }
+      ],
+      "sources": [
+        {
+          "id": 1,
+          "type": "mp4",
+          "title": "HD",
+          "quality": "720p",
+          "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+          "external": false
+        }
+      ],
+      "trailer_url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+      "subtitles": []
+    }
+  ],
+  "series": [
+    {
+      "id": 201,
+      "title": "Placeholder Series",
+      "description": "A series about placeholders and future content.",
+      "year": "2024",
+      "rating": 8.8,
+      "image": "https://via.placeholder.com/440x660/3d3d3d/ffffff?text=Placeholder+Series",
+      "cover": "https://via.placeholder.com/1280x720/3d3d3d/ffffff?text=Placeholder+Series+Cover",
+      "genres": [
+        { "id": 14, "title": "Sci-Fi" },
+        { "id": 15, "title": "Mystery" }
+      ],
+      "seasons": [
+        {
+          "id": 1,
+          "title": "Season 1",
+          "episodes": [
+            {
+              "id": 1,
+              "title": "Episode 1: The Awakening",
+              "description": "The first placeholder episode.",
+              "image": "https://via.placeholder.com/640x360/4d4d4d/ffffff?text=S1E1+Awakening",
+              "duration": "22 min",
+              "sources": [
+                {
+                  "id": 1,
+                  "type": "mp4",
+                  "title": "HD",
+                  "quality": "720p",
+                  "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+                  "external": false
+                }
+              ],
+              "subtitles": []
+            },
+            {
+              "id": 2,
+              "title": "Episode 2: The Discovery",
+              "description": "The second placeholder episode.",
+              "image": "https://via.placeholder.com/640x360/4d4d4d/ffffff?text=S1E2+Discovery",
+              "duration": "23 min",
+              "sources": [
+                {
+                  "id": 1,
+                  "type": "mp4",
+                  "title": "HD",
+                  "quality": "720p",
+                  "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+                  "external": false
+                }
+              ],
+              "subtitles": []
+            }
+          ]
+        }
+      ],
+      "trailer_url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
+    }
+  ],
+  "channels": [
+    {
+      "id": 301,
+      "title": "Blender Open Channel (Demo)",
+      "description": "A demo live stream channel using Blender open movie content.",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Blender_logo_old.svg/512px-Blender_logo_old.svg.png",
+      "website": "https://www.blender.org/foundation/projects/",
+      "categories": [
+        { "id": 20, "title": "Animation" },
+        { "id": 21, "title": "Open Source" }
+      ],
+      "countries": [
+        { "id": 30, "title": "Netherlands" }
+      ],
+      "sources": [
+        {
+          "id": 1,
+          "type": "hls",
+          "title": "Main Stream (Big Buck Bunny)",
+          "quality": "Auto",
+          "url": "https://wowzaec2demo.streamlock.net/live/bigbuckbunny/playlist.m3u8",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": 302,
+      "title": "Test Stream Channel",
+      "description": "A public test HLS stream.",
+      "image": "https://via.placeholder.com/512x512/5d5d5d/ffffff?text=Test+Stream",
+      "website": "",
+      "categories": [
+        { "id": 22, "title": "Test" },
+        { "id": 23, "title": "Streaming" }
+      ],
+      "countries": [
+        { "id": 31, "title": "Global" }
+      ],
+      "sources": [
+        {
+          "id": 1,
+          "type": "hls",
+          "title": "Bip Bop",
+          "quality": "Auto",
+          "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8",
+          "external": false
+        }
+      ]
+    }
+  ],
+  "genres": [
+    { "id": 10, "title": "Animation" },
+    { "id": 11, "title": "Comedy" },
+    { "id": 12, "title": "Short" },
+    { "id": 13, "title": "Fantasy" },
+    { "id": 14, "title": "Sci-Fi" },
+    { "id": 15, "title": "Mystery" },
+    { "id": 16, "title": "Action" },
+    { "id": 17, "title": "Drama" }
+  ],
+  "categories": [
+    { "id": 20, "title": "Animation" },
+    { "id": 21, "title": "Open Source" },
+    { "id": 22, "title": "Test" },
+    { "id": 23, "title": "Streaming" },
+    { "id": 24, "title": "Movies" },
+    { "id": 25, "title": "TV Shows" }
+  ],
+  "countries": [
+    { "id": 30, "title": "Netherlands" },
+    { "id": 31, "title": "Global" },
+    { "id": 32, "title": "USA" }
+  ]
+}
+```

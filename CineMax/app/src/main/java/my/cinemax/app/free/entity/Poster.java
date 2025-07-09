@@ -23,29 +23,12 @@ public class Poster implements Parcelable {
     @Expose
     private String type;
 
-    @SerializedName("label")
-    @Expose
-    private String label;
-
-    @SerializedName("sublabel")
-    @Expose
-    private String sublabel;
-
-    @SerializedName("imdb")
-    @Expose
-    private String imdb;
-
-    @SerializedName("downloadas")
-    @Expose
-    private String downloadas;
-
-    @SerializedName("comment")
-    @Expose
-    private Boolean comment;
-
-    @SerializedName("playas")
-    @Expose
-    private String playas;
+    // label removed
+    // sublabel removed
+    // imdb removed
+    // downloadas removed
+    // comment removed
+    // playas removed
 
     @SerializedName("description")
     @Expose
@@ -102,13 +85,13 @@ public class Poster implements Parcelable {
         }
         title = in.readString();
         type = in.readString();
-        label = in.readString();
-        sublabel = in.readString();
-        imdb = in.readString();
-        downloadas = in.readString();
-        byte tmpComment = in.readByte();
-        comment = tmpComment == 0 ? null : tmpComment == 1;
-        playas = in.readString();
+        // label removed from parcel
+        // sublabel removed from parcel
+        // imdb removed from parcel
+        // downloadas removed from parcel
+        // byte tmpComment = in.readByte();
+        // comment = tmpComment == 0 ? null : tmpComment == 1; // comment removed from parcel
+        // playas removed from parcel
         description = in.readString();
         classification = in.readString();
         year = in.readString();
@@ -136,12 +119,12 @@ public class Poster implements Parcelable {
         }
         dest.writeString(title);
         dest.writeString(type);
-        dest.writeString(label);
-        dest.writeString(sublabel);
-        dest.writeString(imdb);
-        dest.writeString(downloadas);
-        dest.writeByte((byte) (comment == null ? 0 : comment ? 1 : 2));
-        dest.writeString(playas);
+        // label removed from parcel
+        // sublabel removed from parcel
+        // imdb removed from parcel
+        // downloadas removed from parcel
+        // dest.writeByte((byte) (comment == null ? 0 : comment ? 1 : 2)); // comment removed from parcel
+        // playas removed from parcel
         dest.writeString(description);
         dest.writeString(classification);
         dest.writeString(year);
@@ -289,25 +272,11 @@ public class Poster implements Parcelable {
         return f.format(d);
     }
 
-    public void setImdb(String imdb) {
-        this.imdb = imdb;
-    }
-
-    public String getDownloadas() {
-        return downloadas;
-    }
-
-    public void setDownloadas(String downloadas) {
-        this.downloadas = downloadas;
-    }
-
-    public String getPlayas() {
-        return playas;
-    }
-
-    public void setPlayas(String playas) {
-        this.playas = playas;
-    }
+    // setImdb removed
+    // getDownloadas removed
+    // setDownloadas removed
+    // getPlayas removed
+    // setPlayas removed
 
     public String getType() {
         return type;
@@ -317,30 +286,12 @@ public class Poster implements Parcelable {
         this.type = type;
     }
 
-    public Boolean getComment() {
-        return comment;
-    }
-
-    public void setComment(Boolean comment) {
-        this.comment = comment;
-    }
-
-
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
-    public void setSublabel(String sublabel) {
-        this.sublabel = sublabel;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public String getSublabel() {
-        return sublabel;
-    }
+    // getComment removed
+    // setComment removed
+    // setLabel removed
+    // setSublabel removed
+    // getLabel removed
+    // getSublabel removed
 }
 
 

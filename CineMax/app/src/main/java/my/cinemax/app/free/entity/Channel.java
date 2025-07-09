@@ -18,13 +18,8 @@ public class Channel implements Parcelable {
     @Expose
     private String title;
 
-    @SerializedName("label")
-    @Expose
-    private String label;
-
-    @SerializedName("sublabel")
-    @Expose
-    private String sublabel;
+    // label removed
+    // sublabel removed
 
     @SerializedName("description")
     @Expose
@@ -44,16 +39,12 @@ public class Channel implements Parcelable {
     @SerializedName("rating")
     @Expose
     private Float rating;
-    @SerializedName("comment")
-    @Expose
-    private Boolean comment;
+    // comment removed
     @SerializedName("image")
     @Expose
     private String image;
 
-    @SerializedName("playas")
-    @Expose
-    private String playas;
+    // playas removed
 
     @SerializedName("sources")
     @Expose
@@ -81,8 +72,8 @@ public class Channel implements Parcelable {
             id = in.readInt();
         }
         title = in.readString();
-        label = in.readString();
-        sublabel = in.readString();
+        // label removed from parcel
+        // sublabel removed from parcel
         description = in.readString();
         website = in.readString();
         classification = in.readString();
@@ -101,10 +92,10 @@ public class Channel implements Parcelable {
         } else {
             rating = in.readFloat();
         }
-        byte tmpComment = in.readByte();
-        comment = tmpComment == 0 ? null : tmpComment == 1;
+        // byte tmpComment = in.readByte(); // comment removed from parcel
+        // comment = tmpComment == 0 ? null : tmpComment == 1; // comment removed from parcel
         image = in.readString();
-        playas = in.readString();
+        // playas removed from parcel
         sources = in.createTypedArrayList(Source.CREATOR);
         categories = in.createTypedArrayList(Category.CREATOR);
         countries = in.createTypedArrayList(Country.CREATOR);
@@ -120,8 +111,8 @@ public class Channel implements Parcelable {
             dest.writeInt(id);
         }
         dest.writeString(title);
-        dest.writeString(label);
-        dest.writeString(sublabel);
+        // label removed from parcel
+        // sublabel removed from parcel
         dest.writeString(description);
         dest.writeString(website);
         dest.writeString(classification);
@@ -143,9 +134,9 @@ public class Channel implements Parcelable {
             dest.writeByte((byte) 1);
             dest.writeFloat(rating);
         }
-        dest.writeByte((byte) (comment == null ? 0 : comment ? 1 : 2));
+        // dest.writeByte((byte) (comment == null ? 0 : comment ? 1 : 2)); // comment removed from parcel
         dest.writeString(image);
-        dest.writeString(playas);
+        // playas removed from parcel
         dest.writeTypedList(sources);
         dest.writeTypedList(categories);
         dest.writeTypedList(countries);
@@ -233,13 +224,8 @@ public class Channel implements Parcelable {
         this.rating = rating;
     }
 
-    public Boolean getComment() {
-        return comment;
-    }
-
-    public void setComment(Boolean comment) {
-        this.comment = comment;
-    }
+    // getComment removed
+    // setComment removed
 
     public String getImage() {
         return image;
@@ -282,27 +268,10 @@ public class Channel implements Parcelable {
         return this;
     }
 
-    public String getPlayas() {
-        return playas;
-    }
-
-    public void setPlayas(String playas) {
-        this.playas = playas;
-    }
-
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
-    public void setSublabel(String sublabel) {
-        this.sublabel = sublabel;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public String getSublabel() {
-        return sublabel;
-    }
+    // getPlayas removed
+    // setPlayas removed
+    // setLabel removed
+    // setSublabel removed
+    // getLabel removed
+    // getSublabel removed
 }

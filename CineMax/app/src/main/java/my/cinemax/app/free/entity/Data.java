@@ -16,14 +16,15 @@ public class Data {
     @Expose
     private List<Channel> channels = null;
 
-    @SerializedName("actors")
-    @Expose
-    private List<Actor> actors = null;
+    // actors list removed
 
-
-    @SerializedName("posters")
+    @SerializedName("movies") // Changed from posters
     @Expose
-    private List<Poster> posters = null;
+    private List<Poster> movies = null;
+
+    @SerializedName("series") // Added for series
+    @Expose
+    private List<Poster> series = null;
 
     @SerializedName("genres")
     @Expose
@@ -48,17 +49,13 @@ public class Data {
         this.channels = channels;
     }
 
-    public void setActors(List<Actor> actors) {
-        this.actors = actors;
-    }
+    // setActors removed
 
     public List<Channel> getChannels() {
         return channels;
     }
 
-    public List<Actor> getActors() {
-        return actors;
-    }
+    // getActors removed
 
     public void setGenre(Genre genre) {
         this.genre = genre;
@@ -84,11 +81,19 @@ public class Data {
         return viewType;
     }
 
-    public List<Poster> getPosters() {
-        return posters;
+    public List<Poster> getMovies() {
+        return movies;
     }
 
-    public void setPosters(List<Poster> posters) {
-        this.posters = posters;
+    public void setMovies(List<Poster> movies) {
+        this.movies = movies;
+    }
+
+    public List<Poster> getSeries() {
+        return series;
+    }
+
+    public void setSeries(List<Poster> series) {
+        this.series = series;
     }
 }

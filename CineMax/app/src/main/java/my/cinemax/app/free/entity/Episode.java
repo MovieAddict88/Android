@@ -17,14 +17,9 @@ public class Episode {
     @Expose
     private String description;
 
-    @SerializedName("downloadas")
-    @Expose
-    private String downloadas;
+    // downloadas removed
 
-
-    @SerializedName("playas")
-    @Expose
-    private String playas;
+    // playas removed
 
     @SerializedName("duration")
     @Expose
@@ -78,21 +73,10 @@ public class Episode {
         this.sources = sources;
     }
 
-    public String getDownloadas() {
-        return downloadas;
-    }
-
-    public void setDownloadas(String downloadas) {
-        this.downloadas = downloadas;
-    }
-
-    public String getPlayas() {
-        return playas;
-    }
-
-    public void setPlayas(String playas) {
-        this.playas = playas;
-    }
+    // getDownloadas removed
+    // setDownloadas removed
+    // getPlayas removed
+    // setPlayas removed
 
     public String getDuration() {
         return duration;
