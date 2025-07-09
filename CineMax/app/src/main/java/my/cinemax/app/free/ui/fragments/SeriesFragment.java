@@ -27,8 +27,9 @@ import android.widget.RelativeLayout;
 
 import my.cinemax.app.free.Provider.PrefManager;
 import my.cinemax.app.free.R;
-import my.cinemax.app.free.api.apiClient;
-import my.cinemax.app.free.api.apiRest;
+// import my.cinemax.app.free.api.apiClient; // Replaced
+// import my.cinemax.app.free.api.apiRest; // Replaced
+import my.cinemax.app.free.repository.LocalJsonRepository; // Added
 import my.cinemax.app.free.entity.Genre;
 import my.cinemax.app.free.entity.Poster;
 import my.cinemax.app.free.ui.Adapters.PosterAdapter;
@@ -82,9 +83,11 @@ public class SeriesFragment extends Fragment {
 
     private Integer lines_beetween_ads = 2 ;
     private boolean tabletSize;
-    private Boolean native_ads_enabled = false ;
-    private int type_ads = 0;
+    private Boolean native_ads_enabled = false ; // To be removed
+    private int type_ads = 0; // To be removed
     private PrefManager prefManager;
+
+    private LocalJsonRepository localJsonRepository; // Added
 
 
     public SeriesFragment() {
@@ -96,6 +99,9 @@ public class SeriesFragment extends Fragment {
 
         if (isVisibleToUser){
             if (!loaded) {
+                if (localJsonRepository == null && getContext() != null) {
+                    localJsonRepository = new LocalJsonRepository(requireContext());
+                }
                 loaded=true;
                 page = 0;
                 loading = true;
@@ -110,47 +116,46 @@ public class SeriesFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view =  inflater.inflate(R.layout.fragment_series, container, false);
-        movieList.add(new Poster().setTypeView(2));
+        // movieList.add(new Poster().setTypeView(2)); // Dummy item for ads header removed
         prefManager= new PrefManager(getApplicationContext());
+        localJsonRepository = new LocalJsonRepository(requireContext()); // Added
 
         initView();
         initActon();
+
+        if (getUserVisibleHint() && !loaded) { // Handle case where fragment is visible on creation
+             loaded=true;
+             page = 0;
+             loading = true;
+             getGenreList();
+             loadSeries();
+         }
 
         return view;
     }
 
     private void getGenreList() {
-        Retrofit retrofit = apiClient.getClient();
-        apiRest service = retrofit.create(apiRest.class);
+        if (getContext() == null) return;
 
-        Call<List<Genre>> call = service.getGenreList();
-        call.enqueue(new Callback<List<Genre>>() {
-            @Override
-            public void onResponse(Call<List<Genre>> call, Response<List<Genre>> response) {
-                if (response.isSuccessful()){
-                    if (response.body().size()>0) {
-                        final String[] countryCodes = new String[response.body().size()+1];
-                        countryCodes[0] = "All genres";
-                        genreList.add(new Genre());
+        List<Genre> fetchedGenres = localJsonRepository.getGenreList();
+        if (fetchedGenres != null && !fetchedGenres.isEmpty()) {
+            genreList.clear();
+            final String[] genreNames = new String[fetchedGenres.size() + 1];
+            genreNames[0] = "All genres";
+            genreList.add(new Genre()); // Placeholder for "All genres"
 
-                        for (int i = 0; i < response.body().size(); i++) {
-                            countryCodes[i+1] = response.body().get(i).getTitle();
-                            genreList.add(response.body().get(i));
-                        }
-                        ArrayAdapter<String> filtresAdapter = new ArrayAdapter<String>(getActivity(),
-                                R.layout.spinner_layout,R.id.textView,countryCodes);
-                        filtresAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item);
-                        spinner_fragement_series_genre_list.setAdapter(filtresAdapter);
-                        relative_layout_frament_series_genres.setVisibility(View.VISIBLE);
-                    }else{
-                        relative_layout_frament_series_genres.setVisibility(View.GONE);
-                    }
-                }
+            for (int i = 0; i < fetchedGenres.size(); i++) {
+                genreNames[i + 1] = fetchedGenres.get(i).getTitle();
+                genreList.add(fetchedGenres.get(i));
             }
-            @Override
-            public void onFailure(Call<List<Genre>> call, Throwable t) {
-            }
-        });
+            ArrayAdapter<String> filtresAdapter = new ArrayAdapter<>(requireActivity(),
+                    R.layout.spinner_layout, R.id.textView, genreNames);
+            filtresAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item);
+            spinner_fragement_series_genre_list.setAdapter(filtresAdapter);
+            relative_layout_frament_series_genres.setVisibility(View.VISIBLE);
+        } else {
+            relative_layout_frament_series_genres.setVisibility(View.GONE);
+        }
     }
 
     private void initActon() {
@@ -176,7 +181,7 @@ public class SeriesFragment extends Fragment {
                     page = 0;
                     loading = true;
                     movieList.clear();
-                    movieList.add(new Poster().setTypeView(2));
+                    // movieList.add(new Poster().setTypeView(2)); // Dummy item for ads header removed
                     adapter.notifyDataSetChanged();
                     loadSeries();
                 }else{
@@ -239,7 +244,7 @@ public class SeriesFragment extends Fragment {
                 page = 0;
                 loading = true;
                 movieList.clear();
-                movieList.add(new Poster().setTypeView(2));
+                // movieList.add(new Poster().setTypeView(2)); // Dummy item for ads header removed
                 adapter.notifyDataSetChanged();
                 loadSeries();
             }
@@ -251,7 +256,7 @@ public class SeriesFragment extends Fragment {
                 page = 0;
                 loading = true;
                 movieList.clear();
-                movieList.add(new Poster().setTypeView(2));
+                // movieList.add(new Poster().setTypeView(2)); // Dummy item for ads header removed
                 adapter.notifyDataSetChanged();
                 loadSeries();
             }
@@ -323,43 +328,21 @@ public class SeriesFragment extends Fragment {
         if (native_ads_enabled){
             Log.v("MYADS","ENABLED");
             if (tabletSize) {
-                this.gridLayoutManager=  new GridLayoutManager(getActivity().getApplicationContext(),6,RecyclerView.VERTICAL,false);
-                Log.v("MYADS","tabletSize");
-                gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                    @Override
-                    public int getSpanSize(int position) {
-                        return ((position ) % (lines_beetween_ads + 1 ) == 0 || position == 0) ? 6 : 1;
-                    }
-                });
+                this.gridLayoutManager=  new GridLayoutManager(requireActivity().getApplicationContext(),6,RecyclerView.VERTICAL,false);
             } else {
-                this.gridLayoutManager=  new GridLayoutManager(getActivity().getApplicationContext(),3,RecyclerView.VERTICAL,false);
-                gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                    @Override
-                    public int getSpanSize(int position) {
-                        return ((position ) % (lines_beetween_ads + 1 ) == 0 || position == 0) ? 3 : 1;
-                    }
-                });
+                this.gridLayoutManager=  new GridLayoutManager(requireActivity().getApplicationContext(),3,RecyclerView.VERTICAL,false);
             }
-        }else {
-            if (tabletSize) {
-                this.gridLayoutManager=  new GridLayoutManager(getActivity().getApplicationContext(),6,RecyclerView.VERTICAL,false);
-                gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                    @Override
-                    public int getSpanSize(int position) {
-                        return ( position == 0) ? 6 : 1;
-                    }
-                });
-            } else {
-                this.gridLayoutManager=  new GridLayoutManager(getActivity().getApplicationContext(),3,RecyclerView.VERTICAL,false);
-                gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                    @Override
-                    public int getSpanSize(int position) {
-                        return ( position == 0) ? 3 : 1;
-                    }
-                });
-            }
-        }
+        } //End of native ads enabled block
 
+        // Reset SpanSizeLookup if ads are removed
+        if (!native_ads_enabled) {
+             gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                @Override
+                public int getSpanSize(int position) {
+                    return 1; // Each item takes 1 span
+                }
+            });
+        }
 
         recycler_view_series_fragment.setHasFixedSize(true);
         recycler_view_series_fragment.setAdapter(adapter);
@@ -381,72 +364,43 @@ public class SeriesFragment extends Fragment {
             relative_layout_load_more_series_fragment.setVisibility(View.VISIBLE);
         }
         swipe_refresh_layout_series_fragment.setRefreshing(false);
-        Retrofit retrofit = apiClient.getClient();
-        apiRest service = retrofit.create(apiRest.class);
-        Call<List<Poster>> call = service.getSeriesByFiltres(genreSelected,orderSelected,page);
-        call.enqueue(new Callback<List<Poster>>() {
-            @Override
-            public void onResponse(Call<List<Poster>> call, final Response<List<Poster>> response) {
-                if (response.isSuccessful()){
-                    if (response.body().size()>0){
-                        for (int i = 0; i < response.body().size(); i++) {
-                            movieList.add(response.body().get(i));
 
-                            if (native_ads_enabled){
-                                item++;
-                                if (item == lines_beetween_ads ){
-                                    item= 0;
-                                    if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("FACEBOOK")) {
-                                        movieList.add(new Poster().setTypeView(4));
-                                    }else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("ADMOB")){
-                                        movieList.add(new Poster().setTypeView(5));
-                                    } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("BOTH")){
-                                        if (type_ads == 0) {
-                                            movieList.add(new Poster().setTypeView(4));
-                                            type_ads = 1;
-                                        }else if (type_ads == 1){
-                                            movieList.add(new Poster().setTypeView(5));
-                                            type_ads = 0;
-                                        }
-                                    }
-                                }
-                            }
+        List<Poster> fetchedSeries = localJsonRepository.getSeriesByFilters(genreSelected, orderSelected, page);
 
-                        }
-                        linear_layout_page_error_series_fragment.setVisibility(View.GONE);
-                        recycler_view_series_fragment.setVisibility(View.VISIBLE);
-                        image_view_empty_list.setVisibility(View.GONE);
-
-                        adapter.notifyDataSetChanged();
-                        page++;
-                        loading=true;
-                    }else{
-                        if (page==0) {
-                            linear_layout_page_error_series_fragment.setVisibility(View.GONE);
-                            recycler_view_series_fragment.setVisibility(View.GONE);
-                            image_view_empty_list.setVisibility(View.VISIBLE);
-                        }
-                    }
-                }else{
-                    linear_layout_page_error_series_fragment.setVisibility(View.VISIBLE);
-                    recycler_view_series_fragment.setVisibility(View.GONE);
-                    image_view_empty_list.setVisibility(View.GONE);
+        if (fetchedSeries != null) {
+            if (!fetchedSeries.isEmpty()) {
+                // if (movieList.size() > 0 && movieList.get(0).getTypeView() == 2) { // Removed dummy ad item check
+                //     movieList.remove(0);
+                // }
+                for (Poster serie : fetchedSeries) {
+                    movieList.add(serie);
+                    // Ad logic removed
                 }
-                relative_layout_load_more_series_fragment.setVisibility(View.GONE);
-                swipe_refresh_layout_series_fragment.setRefreshing(false);
-                linear_layout_load_series_fragment.setVisibility(View.GONE);
-            }
+                linear_layout_page_error_series_fragment.setVisibility(View.GONE);
+                recycler_view_series_fragment.setVisibility(View.VISIBLE);
+                image_view_empty_list.setVisibility(View.GONE);
 
-            @Override
-            public void onFailure(Call<List<Poster>> call, Throwable t) {
+                adapter.notifyDataSetChanged();
+                page++;
+                loading = true;
+            } else {
+                if (page == 0 && movieList.isEmpty()) {
+                    linear_layout_page_error_series_fragment.setVisibility(View.GONE);
+                    recycler_view_series_fragment.setVisibility(View.GONE);
+                    image_view_empty_list.setVisibility(View.VISIBLE);
+                }
+                loading = false;
+            }
+        } else {
+             if (page == 0) {
                 linear_layout_page_error_series_fragment.setVisibility(View.VISIBLE);
                 recycler_view_series_fragment.setVisibility(View.GONE);
                 image_view_empty_list.setVisibility(View.GONE);
-                relative_layout_load_more_series_fragment.setVisibility(View.GONE);
-                swipe_refresh_layout_series_fragment.setVisibility(View.GONE);
-                linear_layout_load_series_fragment.setVisibility(View.GONE);
-
             }
-        });
+        }
+
+        relative_layout_load_more_series_fragment.setVisibility(View.GONE);
+        swipe_refresh_layout_series_fragment.setRefreshing(false);
+        linear_layout_load_series_fragment.setVisibility(View.GONE);
     }
 }

@@ -90,11 +90,12 @@ import com.jackandphantom.blurimage.BlurImage;
 import com.orhanobut.hawk.Hawk;
 import my.cinemax.app.free.Provider.PrefManager;
 import my.cinemax.app.free.R;
-import my.cinemax.app.free.api.apiClient;
-import my.cinemax.app.free.api.apiRest;
+// import my.cinemax.app.free.api.apiClient; // Replaced
+// import my.cinemax.app.free.api.apiRest; // Replaced
+import my.cinemax.app.free.repository.LocalJsonRepository; // Added
 import my.cinemax.app.free.config.Global;
 import my.cinemax.app.free.crypto.PlaylistDownloader;
-import my.cinemax.app.free.entity.Actor;
+// import my.cinemax.app.free.entity.Actor; // To be removed
 import my.cinemax.app.free.entity.ApiResponse;
 import my.cinemax.app.free.entity.Comment;
 import my.cinemax.app.free.entity.DownloadItem;
@@ -265,6 +266,8 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
     private Dialog dialog;
     private boolean autoDisplay = false;
 
+    private LocalJsonRepository localJsonRepository; // Added
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -272,20 +275,21 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_serie);
         mCastContext = CastContext.getSharedInstance(this);
+        localJsonRepository = new LocalJsonRepository(getApplicationContext()); // Added
 
 
         initView();
         initAction();
-        getSerie();
-        setSerie();
-        getPosterCastings();
-        getSeasons();
-        checkFavorite();
-        showAdsBanner();
+        getSerie(); // Gets poster from Intent
+        setSerie(); // Sets basic poster details to UI
+        // getPosterCastings(); // Commented out / To be removed
+        getSeasons(); // Will be modified
+        // checkFavorite(); // Commented out / To be removed
+        showAdsBanner(); // Ads will be removed later
 
-        loadRewardedVideoAd();
+        loadRewardedVideoAd(); // Ads will be removed later
 
-        initBuy();
+        initBuy(); // Subscription will be removed later
     }
 
     BillingSubs billingSubs;
@@ -416,44 +420,52 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         }
     }
     private void getSeasons() {
+        // Assuming 'poster' is the Poster object for the series, obtained from intent.
+        // If this poster object, when loaded from localJsonRepository, already contains seasons,
+        // this method might just populate the spinner.
+        // If not, we fetch the series again to get its seasons.
 
-        Retrofit retrofit = apiClient.getClient();
-        apiRest service = retrofit.create(apiRest.class);
+        Poster fullSeriesData = localJsonRepository.getSerieById(poster.getId()); // Get full data if needed
 
-        Call<List<Season>> call = service.getSeasonsBySerie(poster.getId());
-        call.enqueue(new Callback<List<Season>>() {
-            @Override
-            public void onResponse(Call<List<Season>> call, Response<List<Season>> response) {
-                if (response.isSuccessful()){
-                    if (response.body().size()>0) {
-                        seasonArrayList.clear();
-                        final String[] countryCodes = new String[response.body().size()];
+        if (fullSeriesData != null && fullSeriesData.getSeasons() != null && !fullSeriesData.getSeasons().isEmpty()) {
+            seasonArrayList.clear();
+            List<Season> fetchedSeasons = fullSeriesData.getSeasons();
+            final String[] seasonTitles = new String[fetchedSeasons.size()];
 
-                        for (int i = 0; i < response.body().size(); i++) {
-                            countryCodes[i] = response.body().get(i).getTitle();
-                            seasonArrayList.add(response.body().get(i));
-                        }
-                        ArrayAdapter<String> filtresAdapter = new ArrayAdapter<String>(SerieActivity.this,
-                                R.layout.spinner_layout_season,R.id.textView,countryCodes);
-                        filtresAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_season_item);
-                        spinner_activity_serie_season_list.setAdapter(filtresAdapter);
+            for (int i = 0; i < fetchedSeasons.size(); i++) {
+                seasonTitles[i] = fetchedSeasons.get(i).getTitle();
+                seasonArrayList.add(fetchedSeasons.get(i));
+            }
 
-                        linear_layout_activity_serie_seasons.setVisibility(View.VISIBLE);
-                    }else{
-                        linear_layout_activity_serie_seasons.setVisibility(View.GONE);
-                    }
-                }else{
-                    linear_layout_activity_serie_seasons.setVisibility(View.VISIBLE);
+            if (seasonTitles.length > 0) {
+                 ArrayAdapter<String> filtresAdapter = new ArrayAdapter<>(SerieActivity.this,
+                        R.layout.spinner_layout_season, R.id.textView, seasonTitles);
+                filtresAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_season_item);
+                spinner_activity_serie_season_list.setAdapter(filtresAdapter);
+                linear_layout_activity_serie_seasons.setVisibility(View.VISIBLE);
+
+                // Auto-select first season and load its episodes
+                if (!seasonArrayList.isEmpty() && seasonArrayList.get(0).getEpisodes() != null) {
+                     linearLayoutManagerEpisodes = new LinearLayoutManager(getApplicationContext(), RecyclerView.VERTICAL, false);
+                     episodeAdapter = new EpisodeAdapter(seasonArrayList.get(0).getEpisodes());
+                     recycle_view_activity_activity_serie_episodes.setHasFixedSize(true);
+                     recycle_view_activity_activity_serie_episodes.setAdapter(episodeAdapter);
+                     recycle_view_activity_activity_serie_episodes.setLayoutManager(linearLayoutManagerEpisodes);
+                     recycle_view_activity_activity_serie_episodes.setNestedScrollingEnabled(false);
                 }
-            }
-            @Override
-            public void onFailure(Call<List<Season>> call, Throwable t) {
-                linear_layout_activity_serie_seasons.setVisibility(View.GONE);
 
+            } else {
+                 linear_layout_activity_serie_seasons.setVisibility(View.GONE);
             }
-        });
+        } else {
+            linear_layout_activity_serie_seasons.setVisibility(View.GONE);
+        }
     }
+
     private void getPosterCastings() {
+        // This method will be removed as actor information is being removed.
+        // For now, commenting out the content.
+        /*
         Retrofit retrofit = apiClient.getClient();
         apiRest service = retrofit.create(apiRest.class);
         Call<List<Actor>> call = service.getRolesByPoster(poster.getId());
@@ -475,6 +487,10 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             public void onFailure(Call<List<Actor>> call, Throwable t) {
             }
         });
+        */
+        if (linear_layout_activity_serie_cast != null) {
+            linear_layout_activity_serie_cast.setVisibility(View.GONE); // Hide the cast section
+        }
     }
 
     private void getSerie() {
@@ -673,21 +689,21 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
 
         final PrefManager prefManager = new PrefManager(this);
         if (!prefManager.getString(poster.getId()+"_episode_view").equals("true")) {
-            prefManager.setString(poster.getId()+"_episode_view", "true");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            Call<Integer> call = service.addEpisodeView(selectedEpisode
-                    .getId());
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
+            // prefManager.setString(poster.getId()+"_episode_view", "true"); // View tracking removed
+            // Retrofit retrofit = apiClient.getClient();
+            // apiRest service = retrofit.create(apiRest.class);
+            // Call<Integer> call = service.addEpisodeView(selectedEpisode
+            //         .getId());
+            // call.enqueue(new Callback<Integer>() {
+            //     @Override
+            //     public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
 
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
+            //     }
+            //     @Override
+            //     public void onFailure(Call<Integer> call, Throwable t) {
 
-                }
-            });
+            //     }
+            // });
         }
 
         List<Episode> episodes_watched =Hawk.get("episodes_watched");
@@ -767,39 +783,42 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             public void onClick(View v) {
                 PrefManager prf = new PrefManager(getApplicationContext());
                 if (prf.getString("LOGGED").toString().equals("TRUE")) {
-                    Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                    String   key_user=  prf.getString("TOKEN_USER");
-                    Retrofit retrofit = apiClient.getClient();
-                    apiRest service = retrofit.create(apiRest.class);
-                    Call<ApiResponse> call = service.addPosterRate(id_user+"",key_user, poster.getId(), AppCompatRatingBar_dialog_rating_app.getRating());
-                    call.enqueue(new retrofit2.Callback<ApiResponse>() {
-                        @Override
-                        public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                            if (response.isSuccessful()) {
-                                if (response.body().getCode() == 200) {
-                                    Toasty.success(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                    if (response.body().getValues().size()>0){
-                                        if (response.body().getValues().get(0).getName().equals("rate") ){
-                                            linear_layout_activity_serie_imdb_rating.setVisibility(View.VISIBLE);
-                                            rating_bar_activity_serie_rating.setRating(Float.parseFloat(response.body().getValues().get(0).getValue()));
-                                        }
-                                    }
-                                } else {
-                                    Toasty.error(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-
-                            }
-                            rateDialog.dismiss();
-                        }
-
-                        @Override
-                        public void onFailure(Call<ApiResponse> call, Throwable t) {
-                            rateDialog.dismiss();
-                        }
-                    });
+                    // Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
+                    // String   key_user=  prf.getString("TOKEN_USER");
+                    // Retrofit retrofit = apiClient.getClient();
+                    // apiRest service = retrofit.create(apiRest.class);
+                    // Call<ApiResponse> call = service.addPosterRate(id_user+"",key_user, poster.getId(), AppCompatRatingBar_dialog_rating_app.getRating());
+                    // call.enqueue(new retrofit2.Callback<ApiResponse>() {
+                    //     @Override
+                    //     public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    //         if (response.isSuccessful()) {
+                    //             if (response.body().getCode() == 200) {
+                    //                 Toasty.success(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                    //                 if (response.body().getValues().size()>0){
+                    //                     if (response.body().getValues().get(0).getName().equals("rate") ){
+                    //                         linear_layout_activity_serie_imdb_rating.setVisibility(View.VISIBLE);
+                    //                         rating_bar_activity_serie_rating.setRating(Float.parseFloat(response.body().getValues().get(0).getValue()));
+                    //                     }
+                    //                 }
+                    //             } else {
+                    //                 Toasty.error(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                    //             }
+                    //         }
+                    //         rateDialog.dismiss();
+                    //     }
+                    //     @Override
+                    //     public void onFailure(Call<ApiResponse> call, Throwable t) {
+                    //         rateDialog.dismiss();
+                    //     }
+                    // });
+                    Toasty.info(SerieActivity.this, "Rating feature is disabled in this version.", Toast.LENGTH_SHORT).show();
+                    rateDialog.dismiss();
                 } else {
                     rateDialog.dismiss();
-                    Intent intent = new Intent(SerieActivity.this,LoginActivity.class);
+                    // Intent intent = new Intent(SerieActivity.this,LoginActivity.class); // Login will be removed
+                    // startActivity(intent);
+                    // overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+                    Toasty.info(SerieActivity.this, "Login required for rating.", Toast.LENGTH_SHORT).show();
                     startActivity(intent);
                     overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
 
@@ -841,9 +860,15 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         EditText edit_text_comment_dialog_add_comment=dialog.findViewById(R.id.edit_text_comment_dialog_add_comment);
         RecyclerView recycler_view_comment_dialog_comments=dialog.findViewById(R.id.recycler_view_comment_dialog_comments);
 
-        image_view_comment_dialog_empty.setVisibility(View.GONE);
+        // Commenting feature will be disabled
+        image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
         recycler_view_comment_dialog_comments.setVisibility(View.GONE);
-        progress_bar_comment_dialog_comments.setVisibility(View.VISIBLE);
+        progress_bar_comment_dialog_comments.setVisibility(View.GONE);
+        text_view_comment_dialog_count.setText("0 Comments");
+        Toasty.info(SerieActivity.this, "Comments are disabled in this version.", Toast.LENGTH_SHORT).show();
+
+        // Old comment logic commented out
+        /*
         commentAdapter = new CommentAdapter(commentList, SerieActivity.this);
         linearLayoutManagerComments = new LinearLayoutManager(getApplicationContext(), RecyclerView.VERTICAL, false);
         recycler_view_comment_dialog_comments.setHasFixedSize(true);
@@ -854,125 +879,28 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         apiRest service = retrofit.create(apiRest.class);
         Call<List<Comment>> call = service.getCommentsByPoster(poster.getId());
         call.enqueue(new Callback<List<Comment>>() {
-            @Override
-            public void onResponse(Call<List<Comment>> call, Response<List<Comment>> response) {
-                if (response.isSuccessful()){
-                    if (response.body().size()>0) {
-                        commentList.clear();
-                        for (int i = 0; i < response.body().size(); i++)
-                            commentList.add(response.body().get(i));
-
-                        commentAdapter.notifyDataSetChanged();
-
-                        text_view_comment_dialog_count.setText(commentList.size()+" Comments");
-                        image_view_comment_dialog_empty.setVisibility(View.GONE);
-                        recycler_view_comment_dialog_comments.setVisibility(View.VISIBLE);
-                        progress_bar_comment_dialog_comments.setVisibility(View.GONE);
-                        recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                        recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                    }else{
-                        image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
-                        recycler_view_comment_dialog_comments.setVisibility(View.GONE);
-                        progress_bar_comment_dialog_comments.setVisibility(View.GONE);
-                    }
-                }else{
-                    image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
-                    recycler_view_comment_dialog_comments.setVisibility(View.GONE);
-                    progress_bar_comment_dialog_comments.setVisibility(View.GONE);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Comment>> call, Throwable t) {
-                image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
-                recycler_view_comment_dialog_comments.setVisibility(View.GONE);
-                progress_bar_comment_dialog_comments.setVisibility(View.GONE);
-            }
+            // ... onResponse and onFailure
         });
+        */
 
         image_view_comment_dialog_add_comment.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Toasty.info(SerieActivity.this, "Comments are disabled in this version.", Toast.LENGTH_SHORT).show();
+                // Old add comment logic
+                /*
                 if (edit_text_comment_dialog_add_comment.getText().length()>0){
                     PrefManager prf= new PrefManager(SerieActivity.this.getApplicationContext());
                     if (prf.getString("LOGGED").toString().equals("TRUE")){
-                        Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                        String   key_user=  prf.getString("TOKEN_USER");
-                        byte[] data = new byte[0];
-                        String comment_final ="";
-                        try {
-                            data = edit_text_comment_dialog_add_comment.getText().toString().getBytes("UTF-8");
-                            comment_final = Base64.encodeToString(data, Base64.DEFAULT);
-                        } catch (UnsupportedEncodingException e) {
-                            comment_final = edit_text_comment_dialog_add_comment.getText().toString();
-                            e.printStackTrace();
-                        }
-                        progress_bar_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                        image_view_comment_dialog_add_comment.setVisibility(View.GONE);
-                        Retrofit retrofit = apiClient.getClient();
-                        apiRest service = retrofit.create(apiRest.class);
-                        Call<ApiResponse> call = service.addPosterComment(id_user+"",key_user,poster.getId(),comment_final);
-                        call.enqueue(new Callback<ApiResponse>() {
-                            @Override
-                            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                                if (response.isSuccessful()){
-                                    if (response.body().getCode()==200){
-                                        recycler_view_comment_dialog_comments.setVisibility(View.VISIBLE);
-                                        image_view_comment_dialog_empty.setVisibility(View.GONE);
-                                        Toasty.success(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                        edit_text_comment_dialog_add_comment.setText("");
-                                        String id="";
-                                        String content="";
-                                        String user="";
-                                        String image="";
-
-                                        for (int i=0;i<response.body().getValues().size();i++){
-                                            if (response.body().getValues().get(i).getName().equals("id")){
-                                                id=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("content")){
-                                                content=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("user")){
-                                                user=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("image")){
-                                                image=response.body().getValues().get(i).getValue();
-                                            }
-                                        }
-                                        Comment comment= new Comment();
-                                        comment.setId(Integer.parseInt(id));
-                                        comment.setUser(user);
-                                        comment.setContent(content);
-                                        comment.setImage(image);
-                                        comment.setEnabled(true);
-                                        comment.setCreated(getResources().getString(R.string.now_time));
-                                        commentList.add(comment);
-                                        commentAdapter.notifyDataSetChanged();
-                                        text_view_comment_dialog_count.setText(commentList.size()+" Comments");
-
-                                    }else{
-                                        Toasty.error(SerieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                                recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                                recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                                commentAdapter.notifyDataSetChanged();
-                                progress_bar_comment_dialog_add_comment.setVisibility(View.GONE);
-                                image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                            }
-                            @Override
-                            public void onFailure(Call<ApiResponse> call, Throwable t) {
-                                progress_bar_comment_dialog_add_comment.setVisibility(View.GONE);
-                                image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                            }
-                        });
+                        // ...
                     }else{
-                        Intent intent = new Intent(SerieActivity.this,LoginActivity.class);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+                        // Intent intent = new Intent(SerieActivity.this,LoginActivity.class); // Login will be removed
+                        // startActivity(intent);
+                        // overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+                        Toasty.info(SerieActivity.this, "Login required to comment.", Toast.LENGTH_SHORT).show();
                     }
                 }
+                */
             }
         });
         image_view_comment_dialog_close.setOnClickListener(new View.OnClickListener() {
@@ -1696,115 +1624,32 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
             return;
         }
         relative_layout_subtitles_loading.setVisibility(View.VISIBLE);
+        // Subtitle fetching from API will be disabled.
+        /*
         Retrofit retrofit = apiClient.getClient();
         apiRest service = retrofit.create(apiRest.class);
         Call<List<Language>> call = service.getSubtitlesByEpisode(poster.getId());
         call.enqueue(new Callback<List<Language>>() {
-            @Override
-            public void onResponse(Call<List<Language>> call, Response<List<Language>> response) {
-                relative_layout_subtitles_loading.setVisibility(View.GONE);
-                if (response.isSuccessful()){
-                    if (response.body().size()>0) {
-                        subtitlesForCast.clear();
-                        for (int i = 0; i < response.body().size(); i++){
-                            for (int l = 0; l < response.body().get(i).getSubtitles().size(); l++) {
-                                Subtitle subtitletocast =  response.body().get(i).getSubtitles().get(l);
-                                subtitletocast.setLanguage(response.body().get(i).getLanguage());
-                                subtitlesForCast.add(subtitletocast);
-                            }
-                        }
-                    }
-                }
-                loadRemoteMediaSource(position, true);
-            }
-            @Override
-            public void onFailure(Call<List<Language>> call, Throwable t) {
-                relative_layout_subtitles_loading.setVisibility(View.GONE);
-                loadRemoteMediaSource(position, true);
-            }
+            // ...
         });
+        */
+        relative_layout_subtitles_loading.setVisibility(View.GONE);
+        subtitlesForCast.clear();
+        loadRemoteMediaSource(position, true);
     }
     private void checkFavorite() {
-
-        final PrefManager prefManager = new PrefManager(this);
-        if (prefManager.getString("LOGGED").toString().equals("TRUE")){
-            Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-            String   key_user=  prefManager.getString("TOKEN_USER");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            progress_bar_activity_serie_my_list.setVisibility(View.VISIBLE);
-            linear_layout_activity_serie_my_list.setClickable(false);
-
-            image_view_activity_serie_my_list.setVisibility(View.GONE);
-            Call<Integer> call = service.CheckMyList(poster.getId(),id_user,key_user,"poster");
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                    if (response.isSuccessful()){
-                        if (response.body() == 200){
-                            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_close));
-                        }else{
-                            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
-
-                        }
-                    }
-                    progress_bar_activity_serie_my_list.setVisibility(View.GONE);
-                    image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_serie_my_list.setClickable(true);
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-                    progress_bar_activity_serie_my_list.setVisibility(View.GONE);
-                    image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_serie_my_list.setClickable(true);
-
-
-                }
-            });
+        // "My List" feature disabled
+        if (progress_bar_activity_serie_my_list != null) progress_bar_activity_serie_my_list.setVisibility(View.GONE);
+        if (image_view_activity_serie_my_list != null) {
+            image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
+            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
         }
+        if (linear_layout_activity_serie_my_list != null) linear_layout_activity_serie_my_list.setClickable(true);
+        Toasty.info(this, "\"My List\" feature disabled.", Toast.LENGTH_SHORT).show();
     }
     public void addMyList(){
-        final PrefManager prefManager = new PrefManager(this);
-        if (prefManager.getString("LOGGED").toString().equals("TRUE")){
-            Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-            String   key_user=  prefManager.getString("TOKEN_USER");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            progress_bar_activity_serie_my_list.setVisibility(View.VISIBLE);
-            image_view_activity_serie_my_list.setVisibility(View.GONE);
-            linear_layout_activity_serie_my_list.setClickable(false);
-            Call<Integer> call = service.AddMyList(poster.getId(),id_user,key_user,"poster");
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                    if (response.isSuccessful()){
-                        if (response.body() == 200){
-                            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_close));
-                            Toasty.info(SerieActivity.this, "This tv serie has been added to your list", Toast.LENGTH_SHORT).show();
-                        }else{
-                            image_view_activity_serie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
-                            Toasty.warning(SerieActivity.this, "This tv serie has been removed from your list", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                    progress_bar_activity_serie_my_list.setVisibility(View.GONE);
-                    image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_serie_my_list.setClickable(true);
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-                    progress_bar_activity_serie_my_list.setVisibility(View.GONE);
-                    image_view_activity_serie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_serie_my_list.setClickable(true);
-
-                }
-            });
-        }else{
-            Intent intent = new Intent(SerieActivity.this,LoginActivity.class);
-            startActivity(intent);
-            overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-        }
+        // "My List" feature disabled
+        Toasty.info(SerieActivity.this, "\"My List\" feature disabled.", Toast.LENGTH_SHORT).show();
     }
     public void share(){
         String shareBody = poster.getTitle()+"\n\n"+getResources().getString(R.string.get_this_serie_here)+"\n"+ Global.API_URL.replace("api","share")+ poster.getId()+".html";
@@ -1813,26 +1658,10 @@ public class SerieActivity extends AppCompatActivity implements PlaylistDownload
         sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
         sharingIntent.putExtra(Intent.EXTRA_SUBJECT,  getString(R.string.app_name));
         startActivity(Intent.createChooser(sharingIntent, getResources().getString(R.string.app_name)));
-        addShare();
+        // addShare(); // Tracking shares removed
     }
     public void addShare(){
-        final PrefManager prefManager = new PrefManager(this);
-        if (!prefManager.getString(poster.getId()+"_share").equals("true")) {
-            prefManager.setString(poster.getId()+"_share", "true");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            Call<Integer> call = service.addPosterShare(poster.getId());
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-
-                }
-            });
-        }
+        // Tracking shares removed
     }
     @Override
     public void onProgressUpdate(int progress) {

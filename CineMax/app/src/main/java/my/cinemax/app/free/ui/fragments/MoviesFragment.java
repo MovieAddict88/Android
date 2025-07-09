@@ -27,8 +27,9 @@ import android.widget.RelativeLayout;
 
 import my.cinemax.app.free.Provider.PrefManager;
 import my.cinemax.app.free.R;
-import my.cinemax.app.free.api.apiClient;
-import my.cinemax.app.free.api.apiRest;
+// import my.cinemax.app.free.api.apiClient; // Replaced
+// import my.cinemax.app.free.api.apiRest; // Replaced
+import my.cinemax.app.free.repository.LocalJsonRepository; // Added
 import my.cinemax.app.free.entity.Genre;
 import my.cinemax.app.free.entity.Poster;
 import my.cinemax.app.free.ui.Adapters.PosterAdapter;
@@ -80,9 +81,11 @@ public class MoviesFragment extends Fragment {
 
     private Integer lines_beetween_ads = 2 ;
     private boolean tabletSize;
-    private Boolean native_ads_enabled = false ;
-    private int type_ads = 0;
+    private Boolean native_ads_enabled = false ; // To be removed
+    private int type_ads = 0; // To be removed
     private PrefManager prefManager;
+
+    private LocalJsonRepository localJsonRepository; // Added
 
 
     public MoviesFragment() {
@@ -95,6 +98,10 @@ public class MoviesFragment extends Fragment {
 
         if (isVisibleToUser){
             if (!loaded) {
+                // Initialize LocalJsonRepository here if not already done in onCreateView
+                if (localJsonRepository == null && getContext() != null) {
+                     localJsonRepository = new LocalJsonRepository(requireContext());
+                }
                 loaded=true;
                 page = 0;
                 loading = true;
@@ -108,48 +115,52 @@ public class MoviesFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view =  inflater.inflate(R.layout.fragment_movies, container, false);
-        movieList.add(new Poster().setTypeView(2));
+        // movieList.add(new Poster().setTypeView(2)); // This dummy item for ads header might be removed
         prefManager= new PrefManager(getApplicationContext());
+        localJsonRepository = new LocalJsonRepository(requireContext()); // Added
 
-        initView();
+        initView(); // initView sets up the adapter, ensure movieList is initialized before
         initActon();
+         if (!getUserVisibleHint() && !loaded) {
+            // If fragment is not initially visible, but we need to load data once it becomes visible
+            // setUserVisibleHint will handle the first load.
+            // However, if it's part of the initial layout and visible, this ensures load.
+             // This logic might be redundant if setUserVisibleHint always fires correctly.
+         } else if (getUserVisibleHint() && !loaded) {
+             // If fragment is already visible when onCreateView is called (e.g. first tab)
+             loaded=true;
+             page = 0;
+             loading = true;
+             getGenreList();
+             loadMovies();
+         }
+
 
         return view;
     }
 
     private void getGenreList() {
-        Retrofit retrofit = apiClient.getClient();
-        apiRest service = retrofit.create(apiRest.class);
+        if (getContext() == null) return; // Prevent crash if context is not available
 
-        Call<List<Genre>> call = service.getGenreList();
-        call.enqueue(new Callback<List<Genre>>() {
-            @Override
-            public void onResponse(Call<List<Genre>> call, Response<List<Genre>> response) {
-                apiClient.FormatData(getActivity(),response);
-                if (response.isSuccessful()){
-                    if (response.body().size()>0) {
-                        final String[] countryCodes = new String[response.body().size()+1];
-                        countryCodes[0] = "All genres";
-                        genreList.add(new Genre());
+        List<Genre> fetchedGenres = localJsonRepository.getGenreList();
+        if (fetchedGenres != null && !fetchedGenres.isEmpty()) {
+            genreList.clear(); // Clear previous list
+            final String[] genreNames = new String[fetchedGenres.size() + 1];
+            genreNames[0] = "All genres";
+            genreList.add(new Genre()); // Placeholder for "All genres"
 
-                        for (int i = 0; i < response.body().size(); i++) {
-                            countryCodes[i+1] = response.body().get(i).getTitle();
-                            genreList.add(response.body().get(i));
-                        }
-                        ArrayAdapter<String> filtresAdapter = new ArrayAdapter<String>(getActivity(),
-                                R.layout.spinner_layout,R.id.textView,countryCodes);
-                        filtresAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item);
-                        spinner_fragement_movies_genre_list.setAdapter(filtresAdapter);
-                        relative_layout_frament_movies_genres.setVisibility(View.VISIBLE);
-                    }else{
-                        relative_layout_frament_movies_genres.setVisibility(View.GONE);
-                    }
-                }
+            for (int i = 0; i < fetchedGenres.size(); i++) {
+                genreNames[i + 1] = fetchedGenres.get(i).getTitle();
+                genreList.add(fetchedGenres.get(i));
             }
-            @Override
-            public void onFailure(Call<List<Genre>> call, Throwable t) {
-            }
-        });
+            ArrayAdapter<String> filtresAdapter = new ArrayAdapter<>(requireActivity(),
+                    R.layout.spinner_layout, R.id.textView, genreNames);
+            filtresAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item);
+            spinner_fragement_movies_genre_list.setAdapter(filtresAdapter);
+            relative_layout_frament_movies_genres.setVisibility(View.VISIBLE);
+        } else {
+            relative_layout_frament_movies_genres.setVisibility(View.GONE);
+        }
     }
 
     private void initActon() {
@@ -236,7 +247,7 @@ public class MoviesFragment extends Fragment {
                 page = 0;
                 loading = true;
                 movieList.clear();
-                movieList.add(new Poster().setTypeView(2));
+                // movieList.add(new Poster().setTypeView(2)); // Dummy item for ads header removed
                 adapter.notifyDataSetChanged();
                 loadMovies();
 
@@ -249,7 +260,7 @@ public class MoviesFragment extends Fragment {
                 page = 0;
                 loading = true;
                 movieList.clear();
-                movieList.add(new Poster().setTypeView(2));
+                // movieList.add(new Poster().setTypeView(2)); // Dummy item for ads header removed
                 adapter.notifyDataSetChanged();
                 loadMovies();
 
@@ -322,42 +333,52 @@ public class MoviesFragment extends Fragment {
         if (native_ads_enabled){
             Log.v("MYADS","ENABLED");
             if (tabletSize) {
-                this.gridLayoutManager=  new GridLayoutManager(getActivity().getApplicationContext(),6,RecyclerView.VERTICAL,false);
-                Log.v("MYADS","tabletSize");
-                gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                    @Override
-                    public int getSpanSize(int position) {
-                        return ((position ) % (lines_beetween_ads + 1 ) == 0 || position == 0) ? 6 : 1;
-                    }
-                });
+                this.gridLayoutManager=  new GridLayoutManager(requireActivity().getApplicationContext(),6,RecyclerView.VERTICAL,false);
+                // Log.v("MYADS","tabletSize"); // Ads related logging
+                // gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                //     @Override
+                //     public int getSpanSize(int position) {
+                //         return ((position ) % (lines_beetween_ads + 1 ) == 0 || position == 0) ? 6 : 1;
+                //     }
+                // });
             } else {
-                this.gridLayoutManager=  new GridLayoutManager(getActivity().getApplicationContext(),3,RecyclerView.VERTICAL,false);
-                gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                    @Override
-                    public int getSpanSize(int position) {
-                        return ((position ) % (lines_beetween_ads + 1 ) == 0 || position == 0) ? 3 : 1;
-                    }
-                });
+                this.gridLayoutManager=  new GridLayoutManager(requireActivity().getApplicationContext(),3,RecyclerView.VERTICAL,false);
+                // gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                //     @Override
+                //     public int getSpanSize(int position) {
+                //         return ((position ) % (lines_beetween_ads + 1 ) == 0 || position == 0) ? 3 : 1;
+                //     }
+                // });
             }
-        }else {
+        // }else { // Ads block else
             if (tabletSize) {
-                this.gridLayoutManager=  new GridLayoutManager(getActivity().getApplicationContext(),6,RecyclerView.VERTICAL,false);
-                gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                    @Override
-                    public int getSpanSize(int position) {
-                        return ( position == 0) ? 6 : 1;
-                    }
-                });
+                this.gridLayoutManager=  new GridLayoutManager(requireActivity().getApplicationContext(),6,RecyclerView.VERTICAL,false);
+                // gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                //     @Override
+                //     public int getSpanSize(int position) {
+                //         return ( position == 0) ? 6 : 1; // Original was for a header ad view type
+                //     }
+                // });
             } else {
-                this.gridLayoutManager=  new GridLayoutManager(getActivity().getApplicationContext(),3,RecyclerView.VERTICAL,false);
-                gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                    @Override
-                    public int getSpanSize(int position) {
-                        return ( position == 0) ? 3 : 1;
-                    }
-                });
+                this.gridLayoutManager=  new GridLayoutManager(requireActivity().getApplicationContext(),3,RecyclerView.VERTICAL,false);
+                // gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                //     @Override
+                //     public int getSpanSize(int position) {
+                //         return ( position == 0) ? 3 : 1; // Original was for a header ad view type
+                //     }
+                // });
             }
         }
+        // Reset SpanSizeLookup if ads are removed, or adjust to not rely on position 0 for special span if dummy item is removed
+         if (!native_ads_enabled) { // If ads are disabled (which they will be)
+            gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                @Override
+                public int getSpanSize(int position) {
+                    return 1; // Each item takes 1 span
+                }
+            });
+        }
+
 
         recycler_view_movies_fragment.setHasFixedSize(true);
         recycler_view_movies_fragment.setAdapter(adapter);
@@ -379,71 +400,47 @@ public class MoviesFragment extends Fragment {
             relative_layout_load_more_movies_fragment.setVisibility(View.VISIBLE);
         }
         swipe_refresh_layout_movies_fragment.setRefreshing(false);
-        Retrofit retrofit = apiClient.getClient();
-        apiRest service = retrofit.create(apiRest.class);
-        Call<List<Poster>> call = service.getMoviesByFiltres(genreSelected,orderSelected,page);
-        call.enqueue(new Callback<List<Poster>>() {
-            @Override
-            public void onResponse(Call<List<Poster>> call, final Response<List<Poster>> response) {
-                if (response.isSuccessful()){
-                    if (response.body().size()>0){
-                        for (int i = 0; i < response.body().size(); i++) {
-                            movieList.add(response.body().get(i));
 
-                            if (native_ads_enabled){
-                                item++;
-                                if (item == lines_beetween_ads ){
-                                    item= 0;
-                                    if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("FACEBOOK")) {
-                                        movieList.add(new Poster().setTypeView(4));
-                                    }else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("ADMOB")){
-                                        movieList.add(new Poster().setTypeView(5));
-                                    } else if (prefManager.getString("ADMIN_NATIVE_TYPE").equals("BOTH")){
-                                        if (type_ads == 0) {
-                                            movieList.add(new Poster().setTypeView(4));
-                                            type_ads = 1;
-                                        }else if (type_ads == 1){
-                                            movieList.add(new Poster().setTypeView(5));
-                                            type_ads = 0;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        linear_layout_page_error_movies_fragment.setVisibility(View.GONE);
-                        recycler_view_movies_fragment.setVisibility(View.VISIBLE);
-                        image_view_empty_list.setVisibility(View.GONE);
+        // Call LocalJsonRepository
+        List<Poster> fetchedMovies = localJsonRepository.getMoviesByFilters(genreSelected, orderSelected, page);
 
-                        adapter.notifyDataSetChanged();
-                        page++;
-                        loading=true;
-                    }else{
-                        if (page==0) {
-                            linear_layout_page_error_movies_fragment.setVisibility(View.GONE);
-                            recycler_view_movies_fragment.setVisibility(View.GONE);
-                            image_view_empty_list.setVisibility(View.VISIBLE);
-                        }
-                    }
-                }else{
-                    linear_layout_page_error_movies_fragment.setVisibility(View.VISIBLE);
-                    recycler_view_movies_fragment.setVisibility(View.GONE);
-                    image_view_empty_list.setVisibility(View.GONE);
+        if (fetchedMovies != null) {
+            if (!fetchedMovies.isEmpty()) {
+                 // Remove the dummy ad item if it exists and we are adding real items
+                if (movieList.size() > 0 && movieList.get(0).getTypeView() == 2) {
+                   // movieList.remove(0); // Removing the dummy item
                 }
-                relative_layout_load_more_movies_fragment.setVisibility(View.GONE);
-                swipe_refresh_layout_movies_fragment.setRefreshing(false);
-                linear_layout_load_movies_fragment.setVisibility(View.GONE);
-            }
+                for (Poster movie : fetchedMovies) {
+                    movieList.add(movie);
+                    // Ad logic removed here
+                }
+                linear_layout_page_error_movies_fragment.setVisibility(View.GONE);
+                recycler_view_movies_fragment.setVisibility(View.VISIBLE);
+                image_view_empty_list.setVisibility(View.GONE);
 
-            @Override
-            public void onFailure(Call<List<Poster>> call, Throwable t) {
+                adapter.notifyDataSetChanged();
+                page++; // Increment page for next load
+                loading = true; // Ready for next load
+            } else { // No movies fetched for this page
+                if (page == 0 && movieList.isEmpty()) { // Only show empty list if it's the first load and no items at all
+                    linear_layout_page_error_movies_fragment.setVisibility(View.GONE);
+                    recycler_view_movies_fragment.setVisibility(View.GONE);
+                    image_view_empty_list.setVisibility(View.VISIBLE);
+                }
+                // If it's not the first page, or if there were already items,
+                // it means we've reached the end of pagination for current filters.
+                loading = false; // Stop trying to load more for this filter set
+            }
+        } else { // Error case or null response from repository
+            if (page == 0) { // Show error only if it's the first attempt to load
                 linear_layout_page_error_movies_fragment.setVisibility(View.VISIBLE);
                 recycler_view_movies_fragment.setVisibility(View.GONE);
                 image_view_empty_list.setVisibility(View.GONE);
-                relative_layout_load_more_movies_fragment.setVisibility(View.GONE);
-                swipe_refresh_layout_movies_fragment.setVisibility(View.GONE);
-                linear_layout_load_movies_fragment.setVisibility(View.GONE);
-
             }
-        });
+        }
+
+        relative_layout_load_more_movies_fragment.setVisibility(View.GONE);
+        swipe_refresh_layout_movies_fragment.setRefreshing(false);
+        linear_layout_load_movies_fragment.setVisibility(View.GONE);
     }
 }

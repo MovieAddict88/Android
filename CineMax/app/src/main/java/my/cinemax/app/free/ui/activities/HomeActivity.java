@@ -59,8 +59,9 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.jackandphantom.blurimage.BlurImage;
 import my.cinemax.app.free.Provider.PrefManager;
 import my.cinemax.app.free.R;
-import my.cinemax.app.free.api.apiClient;
-import my.cinemax.app.free.api.apiRest;
+// import my.cinemax.app.free.api.apiClient; // Replaced
+// import my.cinemax.app.free.api.apiRest; // Replaced
+import my.cinemax.app.free.repository.LocalJsonRepository; // Added
 import my.cinemax.app.free.config.Global;
 import my.cinemax.app.free.entity.ApiResponse;
 import my.cinemax.app.free.entity.Genre;
@@ -108,6 +109,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private Dialog dialog;
     ConsentForm form;
 
+    private LocalJsonRepository localJsonRepository; // Added
+
 
     public static final String PREF_FILE= "MyPref";
     public static final String SUBSCRIBE_KEY= "subscribe";
@@ -122,6 +125,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+
+        localJsonRepository = new LocalJsonRepository(getApplicationContext()); // Added
+
         getGenreList();
         initViews();
         initActions();
@@ -741,19 +747,17 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         viewPager.setCurrentItem(3);
     }
     private void getGenreList() {
-        Retrofit retrofit = apiClient.getClient();
-        apiRest service = retrofit.create(apiRest.class);
-
-        Call<List<Genre>> call = service.getGenreList();
-        call.enqueue(new Callback<List<Genre>>() {
-            @Override
-            public void onResponse(Call<List<Genre>> call, Response<List<Genre>> response) {
-
-            }
-            @Override
-            public void onFailure(Call<List<Genre>> call, Throwable t) {
-            }
-        });
+        // Replaced API call with local JSON repository
+        List<Genre> genres = localJsonRepository.getGenreList();
+        // The original method didn't do anything with the response,
+        // so we just call the local method.
+        // If these genres were used to populate something globally accessible
+        // from HomeActivity, that logic would go here.
+        if (genres != null) {
+            Log.d("HomeActivity", "Loaded " + genres.size() + " genres from local JSON.");
+        } else {
+            Log.d("HomeActivity", "Failed to load genres from local JSON.");
+        }
     }
     public void showDialog(){
         this.dialog = new Dialog(this,

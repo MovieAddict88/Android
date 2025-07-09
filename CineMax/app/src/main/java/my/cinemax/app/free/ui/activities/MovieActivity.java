@@ -68,10 +68,11 @@ import com.jackandphantom.blurimage.BlurImage;
 import com.orhanobut.hawk.Hawk;
 import my.cinemax.app.free.Provider.PrefManager;
 import my.cinemax.app.free.R;
-import my.cinemax.app.free.api.apiClient;
-import my.cinemax.app.free.api.apiRest;
+// import my.cinemax.app.free.api.apiClient; // Replaced
+// import my.cinemax.app.free.api.apiRest; // Replaced
+import my.cinemax.app.free.repository.LocalJsonRepository; // Added
 import my.cinemax.app.free.config.Global;
-import my.cinemax.app.free.entity.Actor;
+// import my.cinemax.app.free.entity.Actor; // To be removed
 import my.cinemax.app.free.entity.ApiResponse;
 import my.cinemax.app.free.entity.Comment;
 import my.cinemax.app.free.entity.DownloadItem;
@@ -197,6 +198,8 @@ public class MovieActivity extends AppCompatActivity {
     private String payment_methode_id = "null";
     private ProgressBar progress_bar_activity_movie_my_list;
 
+    private LocalJsonRepository localJsonRepository; // Added
+
     private class SessionManagerListenerImpl implements SessionManagerListener {
         @Override
         public void onSessionStarting(Session session) {
@@ -255,14 +258,16 @@ public class MovieActivity extends AppCompatActivity {
         setContentView(R.layout.activity_movie);
         mCastContext = CastContext.getSharedInstance(this);
         prefManager= new PrefManager(getApplicationContext());
+        localJsonRepository = new LocalJsonRepository(getApplicationContext()); // Added
 
         initView();
         initAction();
-        getMovie();
-        setMovie();
-        getPosterCastings();
-        getRandomMovies();
-        checkFavorite();
+        getMovie(); // Gets poster from Intent
+        setMovie(); // Sets basic poster details to UI
+
+        // getPosterCastings(); // Commented out / To be removed
+        getRandomMovies(); // Will be modified to use localJsonRepository
+        // checkFavorite(); // Commented out / To be removed (part of MyList feature)
         setDownloadableList();
         setPlayableList();
         showAdsBanner();
@@ -381,35 +386,34 @@ public class MovieActivity extends AppCompatActivity {
                 genres_list+=poster.getGenres().get(i).getId()+",";
             }
         }
-        Retrofit retrofit = apiClient.getClient();
-        apiRest service = retrofit.create(apiRest.class);
+        // Retrofit retrofit = apiClient.getClient(); // Replaced
+        // apiRest service = retrofit.create(apiRest.class); // Replaced
+        // Call<List<Poster>> call = service.getRandomMoivies(genres_list); // Replaced
 
-        Call<List<Poster>> call = service.getRandomMoivies(genres_list);
-        call.enqueue(new Callback<List<Poster>>() {
-            @Override
-            public void onResponse(Call<List<Poster>> call, Response<List<Poster>> response) {
-                if (response.isSuccessful()){
-                    if (response.body().size()>0) {
-                        List<Poster> posterList = new ArrayList<>();
-                        for (int i = 0; i < response.body().size(); i++) {
-                            if (response.body().get(i).getId() != poster.getId())
-                                posterList.add(response.body().get(i));
-                        }
-                        linearLayoutManagerMoreMovies = new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.HORIZONTAL, false);
-                        posterAdapter  = new PosterAdapter(posterList, MovieActivity.this);
-                        recycle_view_activity_activity_movie_more_movies.setHasFixedSize(true);
-                        recycle_view_activity_activity_movie_more_movies.setAdapter(posterAdapter);
-                        recycle_view_activity_activity_movie_more_movies.setLayoutManager(linearLayoutManagerMoreMovies);
-                        linear_layout_activity_movie_more_movies.setVisibility(View.VISIBLE);
-                    }
+        List<Poster> randomMovies = localJsonRepository.getRandomMovies(genres_list);
+
+        if (randomMovies != null && !randomMovies.isEmpty()) {
+            List<Poster> posterList = new ArrayList<>();
+            for (Poster randomMovie : randomMovies) {
+                if (randomMovie.getId() != poster.getId()) { // Ensure not to add the current movie itself
+                    posterList.add(randomMovie);
                 }
             }
-            @Override
-            public void onFailure(Call<List<Poster>> call, Throwable t) {
+            if (!posterList.isEmpty()){
+                linearLayoutManagerMoreMovies = new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.HORIZONTAL, false);
+                posterAdapter  = new PosterAdapter(posterList, MovieActivity.this); // Assuming PosterAdapter can take List<Poster>
+                recycle_view_activity_activity_movie_more_movies.setHasFixedSize(true);
+                recycle_view_activity_activity_movie_more_movies.setAdapter(posterAdapter);
+                recycle_view_activity_activity_movie_more_movies.setLayoutManager(linearLayoutManagerMoreMovies);
+                linear_layout_activity_movie_more_movies.setVisibility(View.VISIBLE);
             }
-        });
+        }
     }
+
     private void getPosterCastings() {
+        // This method will be removed as actor information is being removed.
+        // For now, commenting out the content.
+        /*
         Retrofit retrofit = apiClient.getClient();
         apiRest service = retrofit.create(apiRest.class);
         Call<List<Actor>> call = service.getRolesByPoster(poster.getId());
@@ -431,6 +435,10 @@ public class MovieActivity extends AppCompatActivity {
             public void onFailure(Call<List<Actor>> call, Throwable t) {
             }
         });
+        */
+        if (linear_layout_activity_movie_cast != null) {
+            linear_layout_activity_movie_cast.setVisibility(View.GONE); // Hide the cast section
+        }
     }
 
     private void getMovie() {
@@ -661,37 +669,42 @@ public class MovieActivity extends AppCompatActivity {
             public void onClick(View v) {
                 PrefManager prf = new PrefManager(getApplicationContext());
                 if (prf.getString("LOGGED").toString().equals("TRUE")) {
-                    Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                    String   key_user=  prf.getString("TOKEN_USER");
-                    Retrofit retrofit = apiClient.getClient();
-                    apiRest service = retrofit.create(apiRest.class);
-                    Call<ApiResponse> call = service.addPosterRate(id_user+"",key_user, poster.getId(), AppCompatRatingBar_dialog_rating_app.getRating());
-                    call.enqueue(new retrofit2.Callback<ApiResponse>() {
-                        @Override
-                        public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                            if (response.isSuccessful()) {
-                                if (response.body().getCode() == 200) {
-                                    Toasty.success(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                    if (response.body().getValues().size()>0){
-                                        if (response.body().getValues().get(0).getName().equals("rate") ){
-                                            linear_layout_activity_movie_rating.setVisibility(View.VISIBLE);
-                                            rating_bar_activity_movie_rating.setRating(Float.parseFloat(response.body().getValues().get(0).getValue()));
-                                        }
-                                    }
-                                } else {
-                                    Toasty.error(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                            rateDialog.dismiss();
-                        }
-                        @Override
-                        public void onFailure(Call<ApiResponse> call, Throwable t) {
-                            rateDialog.dismiss();
-                        }
-                    });
+                    // Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
+                    // String   key_user=  prf.getString("TOKEN_USER");
+                    // Retrofit retrofit = apiClient.getClient();
+                    // apiRest service = retrofit.create(apiRest.class);
+                    // Call<ApiResponse> call = service.addPosterRate(id_user+"",key_user, poster.getId(), AppCompatRatingBar_dialog_rating_app.getRating());
+                    // call.enqueue(new retrofit2.Callback<ApiResponse>() {
+                    //     @Override
+                    //     public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    //         if (response.isSuccessful()) {
+                    //             if (response.body().getCode() == 200) {
+                    //                 Toasty.success(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                    //                 if (response.body().getValues().size()>0){
+                    //                     if (response.body().getValues().get(0).getName().equals("rate") ){
+                    //                         linear_layout_activity_movie_rating.setVisibility(View.VISIBLE);
+                    //                         rating_bar_activity_movie_rating.setRating(Float.parseFloat(response.body().getValues().get(0).getValue()));
+                    //                     }
+                    //                 }
+                    //             } else {
+                    //                 Toasty.error(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                    //             }
+                    //         }
+                    //         rateDialog.dismiss();
+                    //     }
+                    //     @Override
+                    //     public void onFailure(Call<ApiResponse> call, Throwable t) {
+                    //         rateDialog.dismiss();
+                    //     }
+                    // });
+                    Toasty.info(MovieActivity.this, "Rating feature is disabled in this version.", Toast.LENGTH_SHORT).show();
+                    rateDialog.dismiss();
                 } else {
                     rateDialog.dismiss();
-                    Intent intent = new Intent(MovieActivity.this,LoginActivity.class);
+                    // Intent intent = new Intent(MovieActivity.this,LoginActivity.class); // Login will be removed
+                    // startActivity(intent);
+                    // overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+                    Toasty.info(MovieActivity.this, "Login required for rating.", Toast.LENGTH_SHORT).show();
                     startActivity(intent);
                     overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
 
@@ -733,9 +746,16 @@ public class MovieActivity extends AppCompatActivity {
         EditText edit_text_comment_dialog_add_comment=dialog.findViewById(R.id.edit_text_comment_dialog_add_comment);
         RecyclerView recycler_view_comment_dialog_comments=dialog.findViewById(R.id.recycler_view_comment_dialog_comments);
 
-        image_view_comment_dialog_empty.setVisibility(View.GONE);
+        // Commenting feature will be disabled
+        image_view_comment_dialog_empty.setVisibility(View.VISIBLE);
         recycler_view_comment_dialog_comments.setVisibility(View.GONE);
-        progress_bar_comment_dialog_comments.setVisibility(View.VISIBLE);
+        progress_bar_comment_dialog_comments.setVisibility(View.GONE);
+        text_view_comment_dialog_count.setText("0 Comments");
+        Toasty.info(MovieActivity.this, "Comments are disabled in this version.", Toast.LENGTH_SHORT).show();
+
+
+        // Old comment loading and adding logic is commented out below
+        /*
         commentAdapter = new CommentAdapter(commentList, MovieActivity.this);
         linearLayoutManagerComments = new LinearLayoutManager(getApplicationContext(), RecyclerView.VERTICAL, false);
         recycler_view_comment_dialog_comments.setHasFixedSize(true);
@@ -781,90 +801,26 @@ public class MovieActivity extends AppCompatActivity {
                 progress_bar_comment_dialog_comments.setVisibility(View.GONE);
             }
         });
+        */
 
         image_view_comment_dialog_add_comment.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                 Toasty.info(MovieActivity.this, "Comments are disabled in this version.", Toast.LENGTH_SHORT).show();
+                // Old add comment logic
+                /*
                 if (edit_text_comment_dialog_add_comment.getText().length()>0){
                     PrefManager prf= new PrefManager(MovieActivity.this.getApplicationContext());
                     if (prf.getString("LOGGED").toString().equals("TRUE")){
-                        Integer id_user=  Integer.parseInt(prf.getString("ID_USER"));
-                        String   key_user=  prf.getString("TOKEN_USER");
-                        byte[] data = new byte[0];
-                        String comment_final ="";
-                        try {
-                            data = edit_text_comment_dialog_add_comment.getText().toString().getBytes("UTF-8");
-                            comment_final = Base64.encodeToString(data, Base64.DEFAULT);
-                        } catch (UnsupportedEncodingException e) {
-                            comment_final = edit_text_comment_dialog_add_comment.getText().toString();
-                            e.printStackTrace();
-                        }
-                        progress_bar_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                        image_view_comment_dialog_add_comment.setVisibility(View.GONE);
-                        Retrofit retrofit = apiClient.getClient();
-                        apiRest service = retrofit.create(apiRest.class);
-                        Call<ApiResponse> call = service.addPosterComment(id_user+"",key_user,poster.getId(),comment_final);
-                        call.enqueue(new Callback<ApiResponse>() {
-                            @Override
-                            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                                if (response.isSuccessful()){
-                                    if (response.body().getCode()==200){
-                                        recycler_view_comment_dialog_comments.setVisibility(View.VISIBLE);
-                                        image_view_comment_dialog_empty.setVisibility(View.GONE);
-                                        Toasty.success(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                        edit_text_comment_dialog_add_comment.setText("");
-                                        String id="";
-                                        String content="";
-                                        String user="";
-                                        String image="";
-
-                                        for (int i=0;i<response.body().getValues().size();i++){
-                                            if (response.body().getValues().get(i).getName().equals("id")){
-                                                id=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("content")){
-                                                content=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("user")){
-                                                user=response.body().getValues().get(i).getValue();
-                                            }
-                                            if (response.body().getValues().get(i).getName().equals("image")){
-                                                image=response.body().getValues().get(i).getValue();
-                                            }
-                                        }
-                                        Comment comment= new Comment();
-                                        comment.setId(Integer.parseInt(id));
-                                        comment.setUser(user);
-                                        comment.setContent(content);
-                                        comment.setImage(image);
-                                        comment.setEnabled(true);
-                                        comment.setCreated(getResources().getString(R.string.now_time));
-                                        commentList.add(comment);
-                                        commentAdapter.notifyDataSetChanged();
-                                        text_view_comment_dialog_count.setText(commentList.size()+" Comments");
-
-                                    }else{
-                                        Toasty.error(MovieActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                                recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                                recycler_view_comment_dialog_comments.scrollToPosition(recycler_view_comment_dialog_comments.getAdapter().getItemCount()-1);
-                                commentAdapter.notifyDataSetChanged();
-                                progress_bar_comment_dialog_add_comment.setVisibility(View.GONE);
-                                image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                            }
-                            @Override
-                            public void onFailure(Call<ApiResponse> call, Throwable t) {
-                                progress_bar_comment_dialog_add_comment.setVisibility(View.GONE);
-                                image_view_comment_dialog_add_comment.setVisibility(View.VISIBLE);
-                            }
-                        });
+                        // ... (rest of the add comment logic)
                     }else{
-                        Intent intent = new Intent(MovieActivity.this,LoginActivity.class);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+                        // Intent intent = new Intent(MovieActivity.this,LoginActivity.class); // Login will be removed
+                        // startActivity(intent);
+                        // overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
+                         Toasty.info(MovieActivity.this, "Login required to comment.", Toast.LENGTH_SHORT).show();
                     }
                 }
+                */
             }
         });
         image_view_comment_dialog_close.setOnClickListener(new View.OnClickListener() {
@@ -1503,6 +1459,10 @@ public class MovieActivity extends AppCompatActivity {
             return;
         }
         relative_layout_subtitles_loading.setVisibility(View.VISIBLE);
+        // Subtitle fetching from API will be disabled.
+        // If data.json contains subtitle info, LocalJsonRepository could provide it.
+        // For now, assume no local subtitles.
+        /*
         Retrofit retrofit = apiClient.getClient();
         apiRest service = retrofit.create(apiRest.class);
         Call<List<Language>> call = service.getSubtitlesByPoster(poster.getId());
@@ -1513,13 +1473,7 @@ public class MovieActivity extends AppCompatActivity {
                 if (response.isSuccessful()){
                     if (response.body().size()>0) {
                         subtitlesForCast.clear();
-                        for (int i = 0; i < response.body().size(); i++){
-                            for (int l = 0; l < response.body().get(i).getSubtitles().size(); l++) {
-                                Subtitle subtitletocast =  response.body().get(i).getSubtitles().get(l);
-                                subtitletocast.setLanguage(response.body().get(i).getLanguage());
-                                subtitlesForCast.add(subtitletocast);
-                            }
-                        }
+                        // ... (rest of subtitle processing)
                     }
                 }
                 loadRemoteMediaSource(position, true);
@@ -1530,138 +1484,56 @@ public class MovieActivity extends AppCompatActivity {
                 loadRemoteMediaSource(position, true);
             }
         });
+        */
+        relative_layout_subtitles_loading.setVisibility(View.GONE);
+        subtitlesForCast.clear(); // Ensure no old subtitles are used
+        loadRemoteMediaSource(position, true); // Try to load media without subtitles
     }
+
     private void checkFavorite() {
-
-        final PrefManager prefManager = new PrefManager(this);
-        if (prefManager.getString("LOGGED").toString().equals("TRUE")){
-            Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-            String   key_user=  prefManager.getString("TOKEN_USER");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            progress_bar_activity_movie_my_list.setVisibility(View.VISIBLE);
-            linear_layout_activity_movie_my_list.setClickable(false);
-
-            image_view_activity_movie_my_list.setVisibility(View.GONE);
-            Call<Integer> call = service.CheckMyList(poster.getId(),id_user,key_user,"poster");
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                    if (response.isSuccessful()){
-                        if (response.body() == 200){
-                            image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_close));
-                        }else{
-                            image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
-
-                        }
-                    }
-                    progress_bar_activity_movie_my_list.setVisibility(View.GONE);
-                    image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_movie_my_list.setClickable(true);
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-                    progress_bar_activity_movie_my_list.setVisibility(View.GONE);
-                    image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_movie_my_list.setClickable(true);
-
-
-                }
-            });
-        }
+        // "My List" feature relies on user login & backend, will be removed.
+        // For now, hide related UI updates.
+        // final PrefManager prefManager = new PrefManager(this);
+        // if (prefManager.getString("LOGGED").toString().equals("TRUE")){ ... }
+        if (progress_bar_activity_movie_my_list != null) progress_bar_activity_movie_my_list.setVisibility(View.GONE);
+        if (image_view_activity_movie_my_list != null) image_view_activity_movie_my_list.setVisibility(View.VISIBLE); // Default to not in list
+        if (image_view_activity_movie_my_list != null) image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
+        if (linear_layout_activity_movie_my_list != null) linear_layout_activity_movie_my_list.setClickable(true);
+        Toasty.info(this, "\"My List\" feature disabled.", Toast.LENGTH_SHORT).show();
     }
 
     public void share(){
+        // Share functionality can remain, but the URL might need to be generic if deep linking to a specific item
+        // in a local JSON context is not straightforward or desired.
+        // For now, keep original share logic but note it might share a web link.
         String shareBody = poster.getTitle()+"\n\n"+getResources().getString(R.string.get_this_movie_here)+"\n"+ Global.API_URL.replace("api","share")+ poster.getId()+".html";
-        //String shareBody = poster.getTitle()+"\n\n"+getResources().getString(R.string.get_this_movie_here)+"\n"+ "https://admin.newhindivideosongs.in/share/"+ poster.getId()+".html";
         Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
         sharingIntent.setType("text/plain");
         sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
         sharingIntent.putExtra(Intent.EXTRA_SUBJECT,  getString(R.string.app_name));
         startActivity(Intent.createChooser(sharingIntent, getResources().getString(R.string.app_name)));
-        addShare();
+        // addShare(); // Tracking shares will be removed
     }
+
     public void addShare(){
-        final PrefManager prefManager = new PrefManager(this);
-        if (!prefManager.getString(poster.getId()+"_share").equals("true")) {
-            prefManager.setString(poster.getId()+"_share", "true");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            Call<Integer> call = service.addPosterShare(poster.getId());
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-
-                }
-            });
-        }
+        // Tracking shares - will be removed
+        // final PrefManager prefManager = new PrefManager(this);
+        // if (!prefManager.getString(poster.getId()+"_share").equals("true")) { ... }
     }
+
     public void addMyList(){
-        final PrefManager prefManager = new PrefManager(this);
-        if (prefManager.getString("LOGGED").toString().equals("TRUE")){
-            Integer id_user=  Integer.parseInt(prefManager.getString("ID_USER"));
-            String   key_user=  prefManager.getString("TOKEN_USER");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            progress_bar_activity_movie_my_list.setVisibility(View.VISIBLE);
-            image_view_activity_movie_my_list.setVisibility(View.GONE);
-            linear_layout_activity_movie_my_list.setClickable(false);
-            Call<Integer> call = service.AddMyList(poster.getId(),id_user,key_user,"poster");
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-                    if (response.isSuccessful()){
-                        if (response.body() == 200){
-                            image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_close));
-                            Toasty.info(MovieActivity.this, "This movie has been added to your list", Toast.LENGTH_SHORT).show();
-                        }else{
-                            image_view_activity_movie_my_list.setImageDrawable(getResources().getDrawable(R.drawable.ic_check));
-                            Toasty.warning(MovieActivity.this, "This movie has been removed from your list", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                    progress_bar_activity_movie_my_list.setVisibility(View.GONE);
-                    image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_movie_my_list.setClickable(true);
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-                    progress_bar_activity_movie_my_list.setVisibility(View.GONE);
-                    image_view_activity_movie_my_list.setVisibility(View.VISIBLE);
-                    linear_layout_activity_movie_my_list.setClickable(true);
-
-                }
-            });
-        }else{
-            Intent intent = new Intent(MovieActivity.this,LoginActivity.class);
-            startActivity(intent);
-            overridePendingTransition(R.anim.slide_up, R.anim.slide_down);
-        }
+        // "My List" feature relies on user login & backend, will be removed.
+        // final PrefManager prefManager = new PrefManager(this);
+        // if (prefManager.getString("LOGGED").toString().equals("TRUE")){ ... } else { ... }
+        Toasty.info(MovieActivity.this, "\"My List\" feature disabled.", Toast.LENGTH_SHORT).show();
     }
+
     public void addView(){
-        final PrefManager prefManager = new PrefManager(this);
-        if (!prefManager.getString(poster.getId()+"_view").equals("true")) {
-            prefManager.setString(poster.getId()+"_view", "true");
-            Retrofit retrofit = apiClient.getClient();
-            apiRest service = retrofit.create(apiRest.class);
-            Call<Integer> call = service.addMovieView(poster.getId());
-            call.enqueue(new Callback<Integer>() {
-                @Override
-                public void onResponse(Call<Integer> call, retrofit2.Response<Integer> response) {
-
-                }
-                @Override
-                public void onFailure(Call<Integer> call, Throwable t) {
-
-                }
-            });
-        }
+        // View tracking - will be removed
+        // final PrefManager prefManager = new PrefManager(this);
+        // if (!prefManager.getString(poster.getId()+"_view").equals("true")) { ... }
     }
+
     private boolean isMyServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {

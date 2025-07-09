@@ -35,17 +35,17 @@ public class Poster implements Parcelable {
     @Expose
     private String imdb;
 
-    @SerializedName("downloadas")
-    @Expose
-    private String downloadas;
+    // @SerializedName("downloadas")
+    // @Expose
+    // private String downloadas; // Removed
 
     @SerializedName("comment")
     @Expose
     private Boolean comment;
 
-    @SerializedName("playas")
-    @Expose
-    private String playas;
+    // @SerializedName("playas")
+    // @Expose
+    // private String playas; // Removed
 
     @SerializedName("description")
     @Expose
@@ -83,10 +83,13 @@ public class Poster implements Parcelable {
     @Expose
     private List<Source> sources = new ArrayList<>();
 
-
     @SerializedName("trailer")
     @Expose
     private Source trailer ;
+
+    @SerializedName("seasons") // Added for series
+    @Expose
+    private List<Season> seasons = new ArrayList<>(); // Added for series
 
     private int typeView = 1;
 
@@ -105,10 +108,10 @@ public class Poster implements Parcelable {
         label = in.readString();
         sublabel = in.readString();
         imdb = in.readString();
-        downloadas = in.readString();
+        // downloadas = in.readString(); // Removed
         byte tmpComment = in.readByte();
         comment = tmpComment == 0 ? null : tmpComment == 1;
-        playas = in.readString();
+        // playas = in.readString(); // Removed
         description = in.readString();
         classification = in.readString();
         year = in.readString();
@@ -123,6 +126,7 @@ public class Poster implements Parcelable {
         genres = in.createTypedArrayList(Genre.CREATOR);
         sources = in.createTypedArrayList(Source.CREATOR);
         trailer = in.readParcelable(Source.class.getClassLoader());
+        seasons = in.createTypedArrayList(Season.CREATOR); // Added for series
         typeView = in.readInt();
     }
 
@@ -139,9 +143,9 @@ public class Poster implements Parcelable {
         dest.writeString(label);
         dest.writeString(sublabel);
         dest.writeString(imdb);
-        dest.writeString(downloadas);
+        // dest.writeString(downloadas); // Removed
         dest.writeByte((byte) (comment == null ? 0 : comment ? 1 : 2));
-        dest.writeString(playas);
+        // dest.writeString(playas); // Removed
         dest.writeString(description);
         dest.writeString(classification);
         dest.writeString(year);
@@ -157,6 +161,7 @@ public class Poster implements Parcelable {
         dest.writeTypedList(genres);
         dest.writeTypedList(sources);
         dest.writeParcelable(trailer, flags);
+        dest.writeTypedList(seasons); // Added for series
         dest.writeInt(typeView);
     }
 
@@ -293,21 +298,21 @@ public class Poster implements Parcelable {
         this.imdb = imdb;
     }
 
-    public String getDownloadas() {
-        return downloadas;
-    }
+    // public String getDownloadas() { // Removed
+    //     return downloadas;
+    // }
 
-    public void setDownloadas(String downloadas) {
-        this.downloadas = downloadas;
-    }
+    // public void setDownloadas(String downloadas) { // Removed
+    //     this.downloadas = downloadas;
+    // }
 
-    public String getPlayas() {
-        return playas;
-    }
+    // public String getPlayas() { // Removed
+    //     return playas;
+    // }
 
-    public void setPlayas(String playas) {
-        this.playas = playas;
-    }
+    // public void setPlayas(String playas) { // Removed
+    //     this.playas = playas;
+    // }
 
     public String getType() {
         return type;
@@ -340,6 +345,14 @@ public class Poster implements Parcelable {
 
     public String getSublabel() {
         return sublabel;
+    }
+
+    public List<Season> getSeasons() { // Added for series
+        return seasons;
+    }
+
+    public void setSeasons(List<Season> seasons) { // Added for series
+        this.seasons = seasons;
     }
 }
 

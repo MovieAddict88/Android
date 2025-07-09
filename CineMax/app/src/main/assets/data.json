@@ -1,1 +1,168 @@
-
+{
+  "movies": [
+    {
+      "id": 101,
+      "title": "The Galactic Adventure",
+      "type": "movie",
+      "label": "Sci-Fi Blockbuster",
+      "sublabel": "",
+      "description": "An epic journey across galaxies to save humanity from an ancient alien threat. A thrilling ride with stunning visuals and a captivating story.",
+      "classification": "PG-13",
+      "year": "2023",
+      "duration": "2h 15m",
+      "rating": 4.7,
+      "imdb": "8.1",
+      "image": "https://placehold.co/300x450/orange/white?text=MoviePoster1",
+      "cover": "https://placehold.co/800x450/orange/white?text=MovieCover1",
+      "comment": true,
+      "genres": [
+        { "id": 1, "title": "Science Fiction" },
+        { "id": 2, "title": "Action" },
+        { "id": 3, "title": "Adventure" }
+      ],
+      "sources": [
+        {
+          "id": 1001,
+          "type": "mp4",
+          "title": "1080p Full HD",
+          "quality": "1080p",
+          "size": "2.5 GB",
+          "kind": "both",
+          "external": false,
+          "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        },
+        {
+          "id": 1002,
+          "type": "mp4",
+          "title": "720p HD",
+          "quality": "720p",
+          "size": "1.2 GB",
+          "kind": "both",
+          "external": false,
+          "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+        }
+      ],
+      "trailer": {
+          "id": 1003,
+          "type": "youtube",
+          "title": "Official Trailer",
+          "quality": "Auto",
+          "kind": "play",
+          "external": true,
+          "url": "dQw4w9WgXcQ"
+      }
+    }
+  ],
+  "series": [
+    {
+      "id": 201,
+      "title": "Chronicles of Eldoria",
+      "type": "serie",
+      "label": "Fantasy Epic",
+      "sublabel": "New Season",
+      "description": "In the mystical land of Eldoria, ancient prophecies awaken, and unlikely heroes must rise to face a encroaching darkness that threatens to consume all.",
+      "classification": "TV-14",
+      "year": "2023",
+      "duration": "8 Episodes",
+      "rating": 4.9,
+      "imdb": "9.2",
+      "image": "https://placehold.co/300x450/blue/white?text=SeriesPoster1",
+      "cover": "https://placehold.co/800x450/blue/white?text=SeriesCover1",
+      "comment": true,
+      "genres": [
+        { "id": 4, "title": "Fantasy" },
+        { "id": 3, "title": "Adventure" },
+        { "id": 5, "title": "Drama" }
+      ],
+      "trailer": {
+          "id": 2001,
+          "type": "youtube",
+          "title": "Series Trailer",
+          "quality": "Auto",
+          "kind": "play",
+          "external": true,
+          "url": "y2ZJ1m9yqgQ"
+      },
+      "seasons": [
+        {
+          "id": 301,
+          "title": "Season 1",
+          "episodes": [
+            {
+              "id": 401,
+              "title": "The Shadow Gathers",
+              "description": "An ancient evil stirs in the forgotten lands, and the King issues a call for heroes.",
+              "duration": "52m",
+              "image": "https://placehold.co/400x225/lightblue/black?text=S1E1",
+              "sources": [
+                {
+                  "id": 5001,
+                  "type": "mp4",
+                  "title": "HD 1080p",
+                  "quality": "1080p",
+                  "size": "600 MB",
+                  "kind": "both",
+                  "external": false,
+                  "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                }
+              ]
+            },
+            {
+              "id": 402,
+              "title": "The Chosen Few",
+              "description": "A band of unlikely companions answers the call, each with their own secrets and skills.",
+              "duration": "55m",
+              "image": "https://placehold.co/400x225/lightblue/black?text=S1E2",
+              "sources": [
+                {
+                  "id": 5002,
+                  "type": "mp4",
+                  "title": "HD 1080p",
+                  "quality": "1080p",
+                  "size": "620 MB",
+                  "kind": "both",
+                  "external": false,
+                  "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "channels": [
+    {
+      "id": 301,
+      "title": "Global News Network",
+      "label": "LIVE",
+      "sublabel": "24/7 Coverage",
+      "description": "Your primary source for up-to-the-minute global news, analysis, and live events.",
+      "website": "https://example.com/news",
+      "classification": "News",
+      "views": 150000,
+      "shares": 1200,
+      "rating": 4.3,
+      "comment": false,
+      "image": "https://placehold.co/300x200/green/white?text=ChannelLogo1",
+      "sources": [
+        {
+          "id": 6001,
+          "type": "m3u8",
+          "title": "Primary Feed (HD)",
+          "quality": "720p",
+          "kind": "play",
+          "external": false,
+          "url": "https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8"
+        }
+      ],
+      "categories": [
+        { "id": 6, "title": "News" },
+        { "id": 7, "title": "Current Affairs" }
+      ],
+      "countries": [
+        { "id": 8, "title": "Worldwide", "image": "https://placehold.co/50x30/gray/white?text=WW" }
+      ]
+    }
+  ]
+}

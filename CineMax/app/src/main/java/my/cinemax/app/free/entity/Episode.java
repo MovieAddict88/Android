@@ -1,11 +1,15 @@
 package my.cinemax.app.free.entity;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class Episode {
+public class Episode implements Parcelable {
 
     @SerializedName("id")
     @Expose
@@ -17,14 +21,14 @@ public class Episode {
     @Expose
     private String description;
 
-    @SerializedName("downloadas")
-    @Expose
-    private String downloadas;
+    // @SerializedName("downloadas")
+    // @Expose
+    // private String downloadas; // Removed
 
 
-    @SerializedName("playas")
-    @Expose
-    private String playas;
+    // @SerializedName("playas")
+    // @Expose
+    // private String playas; // Removed
 
     @SerializedName("duration")
     @Expose
@@ -35,7 +39,60 @@ public class Episode {
     private String image;
     @SerializedName("sources")
     @Expose
-    private List<Source> sources = null;
+    private List<Source> sources = new ArrayList<>();
+
+
+    public Episode() {
+    }
+
+    protected Episode(Parcel in) {
+        if (in.readByte() == 0) {
+            id = null;
+        } else {
+            id = in.readInt();
+        }
+        title = in.readString();
+        description = in.readString();
+        // downloadas = in.readString(); // Removed
+        // playas = in.readString(); // Removed
+        duration = in.readString();
+        image = in.readString();
+        sources = in.createTypedArrayList(Source.CREATOR); // Source needs to be Parcelable
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (id == null) {
+            dest.writeByte((byte) 0);
+        } else {
+            dest.writeByte((byte) 1);
+            dest.writeInt(id);
+        }
+        dest.writeString(title);
+        dest.writeString(description);
+        // dest.writeString(downloadas); // Removed
+        // dest.writeString(playas); // Removed
+        dest.writeString(duration);
+        dest.writeString(image);
+        dest.writeTypedList(sources);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<Episode> CREATOR = new Creator<Episode>() {
+        @Override
+        public Episode createFromParcel(Parcel in) {
+            return new Episode(in);
+        }
+
+        @Override
+        public Episode[] newArray(int size) {
+            return new Episode[size];
+        }
+    };
 
     public Integer getId() {
         return id;
@@ -78,21 +135,21 @@ public class Episode {
         this.sources = sources;
     }
 
-    public String getDownloadas() {
-        return downloadas;
-    }
+    // public String getDownloadas() { // Removed
+    //     return downloadas;
+    // }
 
-    public void setDownloadas(String downloadas) {
-        this.downloadas = downloadas;
-    }
+    // public void setDownloadas(String downloadas) { // Removed
+    //     this.downloadas = downloadas;
+    // }
 
-    public String getPlayas() {
-        return playas;
-    }
+    // public String getPlayas() { // Removed
+    //     return playas;
+    // }
 
-    public void setPlayas(String playas) {
-        this.playas = playas;
-    }
+    // public void setPlayas(String playas) { // Removed
+    //     this.playas = playas;
+    // }
 
     public String getDuration() {
         return duration;
